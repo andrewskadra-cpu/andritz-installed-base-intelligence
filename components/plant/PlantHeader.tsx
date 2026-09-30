@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Factory } from "lucide-react";
+import { BuildOutageScopeButton } from "@/components/outage/BuildOutageScopeButton";
 import { DemoBadge } from "@/components/ui/DemoBadge";
 import { KeyValue } from "@/components/ui/KeyValue";
 import type { Customer, Plant } from "@/types/installed-base";
@@ -32,7 +33,10 @@ export function PlantHeader({
             <h1 className="text-2xl font-semibold tracking-tight text-ink">{plant.name}</h1>
           </div>
         </div>
-        <DemoBadge />
+        <div className="flex items-center gap-3">
+          <DemoBadge />
+          <BuildOutageScopeButton href={`/plants/${plant.id}/outage-scope`} />
+        </div>
       </div>
       <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <KeyValue label="Plant type" value={plant.plantType} />

@@ -98,7 +98,7 @@ const REGIONS: MonitoredRegion[] = [
     label: "Gearbox",
     title: "Gearbox condition deviation",
     inference: "Possible degradation within the gearbox assembly.",
-    action: "Inspect the gearbox for noise, temperature, backlash and lubricant condition.",
+    action: "Consider inspecting the gearbox for noise, temperature, backlash and lubricant condition.",
   },
   {
     zone: "bearing",
@@ -108,7 +108,7 @@ const REGIONS: MonitoredRegion[] = [
     label: "Bearing",
     title: "Bearing vibration above baseline",
     inference: "Bearing-related degradation is possible.",
-    action: "Inspect the bearing for play, noise and lubricant condition.",
+    action: "Consider inspecting the bearing for play, noise and lubricant condition.",
   },
   {
     zone: "carriage",
@@ -118,7 +118,7 @@ const REGIONS: MonitoredRegion[] = [
     label: "Carriage",
     title: "Carriage drive deviation",
     inference: "Possible carriage drag, track obstruction or drive loading.",
-    action: "Inspect carriage wheels, track and drive for binding or debris.",
+    action: "Consider inspecting carriage wheels, track and drive for binding or debris.",
   },
 ];
 
@@ -213,7 +213,7 @@ function buildFinding(
     {
       level: "inferred",
       statement: region.inference,
-      source: "Pattern hypothesis · requires physical verification",
+      source: "Possible explanation · technician verification recommended",
       recordedAt: null,
     },
     CONFIRMED_NONE,
@@ -224,11 +224,12 @@ function buildFinding(
     status,
     title: region.title,
     reasons,
+    signals: involved.map((s) => s.key),
     evidence,
     recommendation: {
       priority: status === "critical" ? "prompt" : "planned",
       action: region.action,
-      rationale: `${reasons[0]}. The inferred cause needs physical verification.`,
+      rationale: `Based on available condition indicators: ${reasons[0].toLowerCase()}. Technician verification recommended.`,
     },
   };
 }
@@ -291,7 +292,7 @@ function buildSummary(
       {
         level: "inferred",
         statement: region.inference,
-        source: "Pattern hypothesis · requires physical verification",
+        source: "Possible explanation · technician verification recommended",
         recordedAt: null,
       },
       CONFIRMED_NONE,

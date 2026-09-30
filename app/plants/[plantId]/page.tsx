@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowDown, Flame } from "lucide-react";
 import { TopBar } from "@/components/layout/TopBar";
+import { BuildOutageScopeButton } from "@/components/outage/BuildOutageScopeButton";
 import { AssetList } from "@/components/plant/AssetList";
 import { PlantHeader } from "@/components/plant/PlantHeader";
 import { PlantHealthSummary } from "@/components/plant/PlantHealthSummary";
@@ -90,12 +91,19 @@ export default async function PlantPage({ params }: PageProps<"/plants/[plantId]
           const assets = unitAssets(unit.id);
           return (
             <section key={unit.id} id={unit.id} className="scroll-mt-20">
-              <div className="mb-3 flex flex-wrap items-baseline gap-2">
-                <Flame size={18} className="self-center text-ink-2" aria-hidden />
-                <h2 className="text-lg font-semibold text-ink">{unit.name}</h2>
-                <span className="text-sm text-ink-3">
-                  · {unit.unitType} · {assets.length} tracked {assets.length === 1 ? "asset" : "assets"}
-                </span>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <Flame size={18} className="self-center text-ink-2" aria-hidden />
+                  <h2 className="text-lg font-semibold text-ink">{unit.name}</h2>
+                  <span className="text-sm text-ink-3">
+                    · {unit.unitType} · {assets.length} tracked {assets.length === 1 ? "asset" : "assets"}
+                  </span>
+                </div>
+                <BuildOutageScopeButton
+                  href={`/plants/${plant.id}/outage-scope?unit=${unit.id}`}
+                  label={`Build Outage Scope · ${unit.name}`}
+                  variant="secondary"
+                />
               </div>
               <AssetList assets={assets} />
             </section>

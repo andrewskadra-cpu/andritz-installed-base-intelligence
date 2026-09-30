@@ -1,27 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { TelemetryFrame, TelemetryProvider, TelemetrySnapshot } from "@/types/telemetry";
 import { assessHealth } from "./health-engine";
-import { createTelemetryProvider, type TelemetryTarget } from "./telemetry-provider";
+import type { TelemetryTarget } from "./telemetry-provider";
+import { getTelemetryProvider } from "./telemetry-registry";
 
 const noopSubscribe = () => () => {};
 
 /**
  * Subscribes a component tree to live telemetry for one asset and runs the
- * health engine on every update. Server render and hydration use the recent
- * frames fetched on the server, so the first client render matches the HTML.
+ * health engine on every update. The provider is shared through the registry,
+ * so a running stream continues across page navigation. Server render and
+ * hydration use the recent frames fetched on the server.
  */
 export function useAssetTelemetry(target: TelemetryTarget, initialFrames: TelemetryFrame[]) {
-  const [provider] = useState<TelemetryProvider | null>(() => createTelemetryProvider(target));
+  const [provider] = useState<TelemetryProvider | null>(() => getTelemetryProvider(target));
   const [initialSnapshot] = useState<TelemetrySnapshot>(() => ({
     connection: "idle",
     frames: initialFrames,
     intervalMs: 0,
     simulationMode: null,
   }));
-
-  useEffect(() => () => provider?.dispose(), [provider]);
 
   const getInitial = () => initialSnapshot;
   const snapshot = useSyncExternalStore(

@@ -40,6 +40,12 @@ body {
   color: var(--color-ink);
 }
 
+@media print {
+  body {
+    background: #fff;
+  }
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }

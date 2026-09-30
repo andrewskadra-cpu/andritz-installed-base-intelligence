@@ -81,6 +81,17 @@ Physical sensor / PLC → Edge gateway → API / Database
 
 Components never generate values and never compare against thresholds. The health engine only emits OBSERVED, DETECTED and INFERRED statements. CONFIRMED always reads "No technician-confirmed mechanical failure".
 
+## Outage scope
+
+`/plants/[plantId]/outage-scope?unit=<unitId>` turns current health into **outage planning suggestions**. It opens from **Build Outage Scope** on the plant page (per plant or per unit) and on the asset page.
+
+- `lib/outage/generate-outage-scope.ts`: a pure generator. It consumes the derived asset models (records + health-engine output), the planned outage and the inspection checklist in `data/demo-outage.ts`. It has no threshold logic of its own.
+- Every inspection consideration and contingency part carries trace references (equipment, telemetry signal, health-engine detection, service record, document, BOM line). Items without a supporting record are dropped.
+- Checklist items are included only when the node has an active condition, a related signal is detected, and the referenced service event and documents exist.
+- CONFIRMED is populated only from a service event with a `confirmedFinding`. None exist in the demo data.
+- Live telemetry streams live in a browser-side registry (`lib/telemetry/telemetry-registry.ts`) that survives navigation. Build and Refresh capture a frozen snapshot, so the scope shows the same values as the asset page.
+- Wording is decision-support only ("Consider…", "Parts to consider having available"). The page shows a planning-support notice and prints cleanly with **Print / export preview**.
+
 ## 3D viewer
 
 `components/asset/EquipmentScene.tsx` draws a placeholder sootblower from primitive geometry, with selectable zones keyed by `ViewerZone`. It is not an engineering model. Replace it with a GLB per equipment model later and keep the same zone keys.

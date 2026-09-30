@@ -191,6 +191,8 @@ export const serviceEvents: ServiceEvent[] = assets.flatMap((asset) => {
       performedBy,
       workOrder: `DEMO-WO-${sn}-${String(seq).padStart(3, "0")}`,
       ...countersAt(asset, date),
+      // No demo record contains a technician-confirmed finding.
+      confirmedFinding: null,
     };
   };
 

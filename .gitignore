@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Internal CAD / engineering prototype files
+tools/cad/*.FCMacro
+*.FCStd
+reference/
+# Generated model map: carries PI item numbers / binder page references.
+tools/cad/ik700-model-map.json
+tools/cad/*.glb
+
+# Internal 3D models
+public/models/*.glb
+tools/cad/*.glb
+tools/cad/ik700-model-map.json

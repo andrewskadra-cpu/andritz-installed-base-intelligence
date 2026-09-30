@@ -1,3 +1,4 @@
+import { BuildOutageScopeButton } from "@/components/outage/BuildOutageScopeButton";
 import { DemoBadge } from "@/components/ui/DemoBadge";
 import { KeyValue } from "@/components/ui/KeyValue";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -18,7 +19,13 @@ export function AssetHeader({ model }: { model: AssetModel }) {
             <StatusBadge status={model.nodes[model.rootId].status} size="lg" />
           </div>
         </div>
-        <DemoBadge />
+        <div className="flex items-center gap-3">
+          <DemoBadge />
+          <BuildOutageScopeButton
+            href={`/plants/${plant.id}/outage-scope?unit=${unit.id}#scope-asset-${asset.id}`}
+            label={`Build Outage Scope · ${unit.name}`}
+          />
+        </div>
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
         <KeyValue label="Model" value={asset.model} mono />

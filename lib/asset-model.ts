@@ -100,14 +100,34 @@ export function buildAssetModel(records: AssetRecords, assessment: HealthAssessm
   const recommendations: InspectionRecommendation[] = [];
   for (const finding of assessment?.findings ?? []) {
     const id = nodeForZone(finding.zone);
+    // Only a technician-confirmed service record may populate CONFIRMED.
+    const scope = subtreeIdsOf(nodes, id);
+    const confirmedBy = records.serviceEvents
+      .filter((e) => e.confirmedFinding && scope.has(e.entityId))
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    const evidence = confirmedBy
+      ? finding.evidence.map((ev) =>
+          ev.level === "confirmed"
+            ? {
+                level: ev.level,
+                statement: `Recorded technician finding: ${confirmedBy.confirmedFinding}`,
+                source: `Service record ${confirmedBy.workOrder}`,
+                recordedAt: confirmedBy.date,
+              }
+            : ev,
+        )
+      : finding.evidence;
     conditions.push({
       id: `live-${finding.zone}`,
       assetId: asset.id,
       entityId: id,
       title: finding.title,
       status: finding.status,
-      technicianConfirmed: false,
-      evidence: finding.evidence,
+      technicianConfirmed: Boolean(confirmedBy),
+      confirmedByEventId: confirmedBy?.id ?? null,
+      evidence,
+      signals: finding.signals,
+      reasons: finding.reasons,
     });
     recommendations.push({ id: `live-rec-${finding.zone}`, assetId: asset.id, entityId: id, ...finding.recommendation });
   }
@@ -138,15 +158,19 @@ export function pathTo(model: AssetModel, id: string): HierarchyNode[] {
   return path;
 }
 
-/** `id` and every descendant id. */
-export function subtreeIds(model: AssetModel, id: string): Set<string> {
+function subtreeIdsOf(nodes: Record<string, HierarchyNode>, id: string): Set<string> {
   const ids = new Set<string>();
   const walk = (nodeId: string) => {
     ids.add(nodeId);
-    model.nodes[nodeId]?.childIds.forEach(walk);
+    nodes[nodeId]?.childIds.forEach(walk);
   };
   walk(id);
   return ids;
+}
+
+/** `id` and every descendant id. */
+export function subtreeIds(model: AssetModel, id: string): Set<string> {
+  return subtreeIdsOf(model.nodes, id);
 }
 
 const SEVERITY_RANK: Record<HealthStatus, number> = { critical: 0, attention: 1, unknown: 2, healthy: 3 };

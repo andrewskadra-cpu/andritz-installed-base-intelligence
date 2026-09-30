@@ -8,6 +8,7 @@
  */
 
 import * as demo from "@/data/demo-data";
+import * as demoOutage from "@/data/demo-outage";
 import { buildAssetModel, nodeMetrics, sortBySeverity, type AssetModel } from "@/lib/asset-model";
 import { assessHealth } from "@/lib/telemetry/health-engine";
 import { fetchRecentTelemetry } from "@/lib/telemetry/telemetry-provider";
@@ -141,6 +142,40 @@ export async function getCustomerSummary(customerId: string) {
 export async function getWatchlist(): Promise<AssetSummary[]> {
   const summaries = await getAssetSummaries(demo.assets.map((a) => a.id));
   return sortBySeverity(summaries.filter((s) => s.status !== "healthy"));
+}
+
+/**
+ * Everything the outage-scope generator needs for a plant, optionally narrowed
+ * to one unit: stored records and recent telemetry per asset, the planned
+ * outage and the inspection checklist.
+ */
+export async function getOutageScopeData(plantId: string, unitId: string | null) {
+  const plant = await getPlant(plantId);
+  if (!plant) return null;
+  const customer = await getCustomer(plant.customerId);
+  if (!customer) return null;
+  const allUnits = await getUnitsForPlant(plantId);
+  const units = unitId ? allUnits.filter((u) => u.id === unitId) : allUnits;
+  if (units.length === 0) return null;
+
+  const assets = await getAssetsForUnits(units.map((u) => u.id));
+  const assetData = (await Promise.all(assets.map((a) => getAssetPageData(a.id)))).filter(
+    (d): d is NonNullable<typeof d> => d !== null,
+  );
+  const outage =
+    demoOutage.plannedOutages.find(
+      (o) => o.plantId === plantId && (unitId ? o.unitId === unitId : units.some((u) => u.id === o.unitId)),
+    ) ?? null;
+  const assetIds = new Set(assets.map((a) => a.id));
+
+  return {
+    customer,
+    plant,
+    units,
+    outage: unitId || units.length === 1 ? outage : null,
+    assets: assetData,
+    checklist: demoOutage.inspectionChecklist.filter((i) => assetIds.has(i.assetId)),
+  };
 }
 
 /** Flat index of every searchable installed-base record. */

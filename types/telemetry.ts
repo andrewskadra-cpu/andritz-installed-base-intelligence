@@ -94,6 +94,8 @@ export interface TelemetryFinding {
   status: HealthStatus;
   title: string;
   reasons: string[];
+  /** Signals outside demo limits that raised this finding. */
+  signals: TelemetrySignalKey[];
   /** Always contains observed, detected, inferred and confirmed entries. */
   evidence: ConditionEvidence[];
   recommendation: { priority: "planned" | "prompt"; action: string; rationale: string };

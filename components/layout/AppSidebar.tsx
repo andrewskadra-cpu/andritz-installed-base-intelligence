@@ -51,7 +51,7 @@ export function AppSidebar({ links }: { links: SidebarLink[] }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-16 shrink-0 flex-col border-r border-navy-950 bg-navy-900 text-white lg:w-60">
+    <aside className="sticky top-0 flex h-screen print:hidden w-16 shrink-0 flex-col border-r border-navy-950 bg-navy-900 text-white lg:w-60">
       <div className="flex h-14 items-center gap-2.5 border-b border-navy-800 px-4">
         <div className="grid size-8 shrink-0 place-items-center rounded bg-white font-mono text-[11px] font-bold tracking-tight text-navy-900">
           IBI

@@ -39,7 +39,10 @@ export function HealthSummary({
       { label: "Active conditions", value: conditionCount, mono: true },
       { label: "Assemblies", value: node.childIds.length, mono: true },
     ];
-    note = { label: "Next recommended inspection", text: nextInspection?.action ?? "None outstanding." };
+    note = {
+      label: "Next suggested inspection consideration",
+      text: nextInspection?.action ?? "None based on available condition indicators.",
+    };
   } else if (node.type === "assembly") {
     fields = [
       { label: "Operating hours", value: formatNumber(m.operatingHours), mono: true },

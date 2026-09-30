@@ -18,8 +18,8 @@ import { HealthSummary } from "./HealthSummary";
 const EVIDENCE_ORDER: EvidenceLevel[] = ["observed", "detected", "inferred", "confirmed"];
 
 const PRIORITY_LABEL: Record<InspectionRecommendation["priority"], { label: string; className: string }> = {
-  prompt: { label: "Prompt", className: "border-critical/30 bg-critical-soft text-critical" },
-  planned: { label: "Planned", className: "border-attention/30 bg-attention-soft text-attention" },
+  prompt: { label: "Earliest opportunity", className: "border-critical/30 bg-critical-soft text-critical" },
+  planned: { label: "Next planned outage", className: "border-attention/30 bg-attention-soft text-attention" },
   routine: { label: "Routine", className: "border-line-strong bg-canvas text-ink-2" },
 };
 
@@ -164,7 +164,7 @@ export function IntelligencePanel({
       ) : (
         <div className="space-y-3 border-t border-line px-4 py-4">
           <div className="flex items-center justify-between">
-            <SectionLabel>{conditions.length > 0 ? `Why ${node.name} needs attention` : "Active conditions"}</SectionLabel>
+            <SectionLabel>{conditions.length > 0 ? `Why ${node.name} is flagged` : "Active conditions"}</SectionLabel>
             <span className="font-mono text-xs tabular text-ink-3">{conditions.length}</span>
           </div>
           {scoped.length === 0 ? (
@@ -180,14 +180,14 @@ export function IntelligencePanel({
 
       <p className="flex gap-1.5 border-t border-line px-4 py-3 text-[11px] leading-snug text-ink-3">
         <ShieldAlert size={13} className="mt-px shrink-0" aria-hidden />
-        Based on simulated demo telemetry. Inferred statements are hypotheses for inspection planning, not
-        diagnoses. Only technician-verified findings are marked confirmed.
+        Suggestions are based on simulated demo telemetry for planning support only. Inferred statements are
+        possible explanations, not diagnoses. Only technician-verified findings are marked confirmed.
       </p>
 
       <div className="space-y-3 border-t border-line px-4 py-4">
-        <SectionLabel>Recommended inspection</SectionLabel>
+        <SectionLabel>Suggested inspection considerations</SectionLabel>
         {ordered.length === 0 ? (
-          <EmptyState title="No inspection recommended">Continue the routine maintenance schedule.</EmptyState>
+          <EmptyState title="No inspection considerations">Nothing suggested beyond the routine maintenance schedule.</EmptyState>
         ) : (
           <ul className="space-y-2">
             {ordered.map((r) => {

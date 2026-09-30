@@ -8,7 +8,9 @@
  * telemetry, so there is one source of truth for each fact.
  */
 
-export type HealthStatus = "healthy" | "attention" | "critical" | "unknown";
+import type { TelemetrySignalKey } from "./telemetry";
+
+export type HealthStatus ="healthy" | "attention" | "critical" | "unknown";
 
 /**
  * How much certainty backs a statement about equipment condition.
@@ -109,6 +111,11 @@ export interface ServiceEvent {
   /** Asset operating hours / cycles when the event took place. */
   assetOperatingHours: number;
   assetCycles: number;
+  /**
+   * Finding explicitly verified by a technician or engineer during this event.
+   * The only source that may mark a condition as CONFIRMED.
+   */
+  confirmedFinding: string | null;
 }
 
 export type DocumentKind = "drawing" | "pi_sheet" | "procedure" | "bom";
@@ -155,7 +162,13 @@ export interface ActiveCondition {
   title: string;
   status: HealthStatus;
   technicianConfirmed: boolean;
+  /** Service event holding the technician-confirmed finding, when one exists. */
+  confirmedByEventId: string | null;
   evidence: ConditionEvidence[];
+  /** Telemetry signals that raised the condition. */
+  signals: TelemetrySignalKey[];
+  /** Health-engine detection statements behind the condition. */
+  reasons: string[];
 }
 
 export interface ConditionEvidence {
