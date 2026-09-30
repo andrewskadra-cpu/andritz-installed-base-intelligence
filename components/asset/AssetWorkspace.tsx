@@ -55,8 +55,12 @@ export function AssetWorkspace({
   const selection = useMemo(() => resolveSelection(model, selectedId), [model, selectedId]);
 
   const select = useCallback((id: string | null) => {
-    const url = id ? `?${ENTITY_PARAM}=${encodeURIComponent(id)}` : window.location.pathname;
-    window.history.pushState(null, "", url);
+    // Only the entity parameter changes; unrelated parameters (e.g. debug3d) are kept.
+    const params = new URLSearchParams(window.location.search);
+    if (id) params.set(ENTITY_PARAM, id);
+    else params.delete(ENTITY_PARAM);
+    const query = params.toString();
+    window.history.pushState(null, "", query ? `?${query}` : window.location.pathname);
   }, []);
 
   const { customer, plant, unit } = records;
@@ -150,6 +154,7 @@ export function AssetWorkspace({
                     documents={piSheets.items}
                     inheritedFrom={piSheets.inheritedFrom}
                     parts={bom.items}
+                    engineeringReference={selection.node.sourceReference}
                     scopeName={scopeName}
                     emptyLabel="PI sheets"
                     onSelect={select}

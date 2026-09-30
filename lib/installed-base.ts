@@ -65,6 +65,7 @@ export async function getAssetRecords(assetId: string): Promise<AssetRecords | n
     serviceEvents: demo.serviceEvents.filter((e) => e.assetId === assetId),
     documents: demo.documents.filter((d) => d.assetId === assetId),
     parts: demo.parts.filter((p) => p.assetId === assetId),
+    conditionNarratives: demo.conditionNarratives.filter((n) => n.assetId === assetId),
   };
 }
 

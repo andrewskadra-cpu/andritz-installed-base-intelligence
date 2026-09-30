@@ -174,7 +174,7 @@ function assessSignal(key: TelemetrySignalKey, frames: TelemetryFrame[]): Signal
     status = "attention";
     detection = rule.phrases.trend;
   }
-  return { key, latest, status, trendPerSample, detection };
+  return { key, latest, windowStart: frames[0][key], status, trendPerSample, detection };
 }
 
 const observedStatement = (key: TelemetrySignalKey, value: number) =>

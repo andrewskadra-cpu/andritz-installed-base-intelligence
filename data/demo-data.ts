@@ -11,7 +11,9 @@
 import type {
   Asset,
   AssetEntity,
+  ConditionNarrative,
   Customer,
+  EngineeringReference,
   DocumentKind,
   DocumentRecord,
   EntityType,
@@ -118,12 +120,45 @@ interface EntityTemplate {
 const entityTemplate: EntityTemplate[] = [
   { key: "carriage", parent: null, type: "assembly", name: "Carriage", partNumber: null, zone: "carriage" },
   { key: "gearbox", parent: null, type: "assembly", name: "Gearbox Assembly", partNumber: null, zone: "gearbox" },
-  { key: "bearing-b204", parent: "gearbox", type: "component", name: "Bearing B-204", partNumber: "DEMO-B-204", zone: "bearing" },
   { key: "gear-set", parent: "gearbox", type: "component", name: "Gear Set", partNumber: "DEMO-GS-100", zone: null },
+  // Components present in the IK-700 visualization model (see lib/3d/ik700-model-map.ts).
+  // Names only: no part numbers, specifications or inspection records are implied.
+  { key: "worm-gear", parent: "gear-set", type: "component", name: "Worm Gear", partNumber: null, zone: null },
+  { key: "drive-gear", parent: "gear-set", type: "component", name: "Drive Gear", partNumber: null, zone: null },
+  { key: "translation-gear", parent: "gear-set", type: "component", name: "Translation Gear", partNumber: null, zone: null },
+  { key: "bevel-gear", parent: "gear-set", type: "component", name: "Bevel Gear", partNumber: null, zone: null },
+  { key: "bevel-pinion", parent: "gear-set", type: "component", name: "Bevel Pinion", partNumber: null, zone: null },
+  { key: "worm-shaft", parent: "gearbox", type: "component", name: "Worm Shaft", partNumber: null, zone: null },
+  // Primary component-level demo issue. It carries the health engine's "bearing"
+  // monitored region, so the gearbox vibration finding attaches here.
+  { key: "worm-thrust-bearing-a", parent: "worm-shaft", type: "component", name: "Worm Thrust Bearing A", partNumber: null, zone: "bearing" },
+  { key: "worm-thrust-bearing-b", parent: "worm-shaft", type: "component", name: "Worm Thrust Bearing B", partNumber: null, zone: null },
+  { key: "lance-hub-drive-shaft", parent: "gearbox", type: "component", name: "Lance Hub Drive Shaft", partNumber: null, zone: null },
+  { key: "pinion-shaft", parent: "gearbox", type: "component", name: "Pinion Shaft", partNumber: null, zone: null },
+  { key: "lance-hub-bearing-front", parent: "gearbox", type: "component", name: "Lance Hub Bearing, Front", partNumber: null, zone: null },
+  { key: "lance-hub-bearing-rear", parent: "gearbox", type: "component", name: "Lance Hub Bearing, Rear", partNumber: null, zone: null },
+  { key: "drive-shaft-bearing-inner", parent: "gearbox", type: "component", name: "Drive Shaft Bearing, Inner", partNumber: null, zone: null },
+  { key: "drive-shaft-bearing-outer", parent: "gearbox", type: "component", name: "Drive Shaft Bearing, Outer", partNumber: null, zone: null },
+  { key: "pinion-shaft-bearing-left", parent: "gearbox", type: "component", name: "Pinion Shaft Bearing, Left", partNumber: null, zone: null },
+  { key: "pinion-shaft-bearing-right", parent: "gearbox", type: "component", name: "Pinion Shaft Bearing, Right", partNumber: null, zone: null },
   { key: "feed-tube", parent: null, type: "assembly", name: "Feed Tube", partNumber: null, zone: "feed_tube" },
   { key: "lance-tube", parent: null, type: "assembly", name: "Lance Tube", partNumber: null, zone: "lance_tube" },
   { key: "poppet-valve", parent: null, type: "assembly", name: "Poppet Valve", partNumber: null, zone: "poppet_valve" },
+  { key: "motor", parent: "carriage", type: "component", name: "Drive Motor", partNumber: null, zone: null },
 ];
+
+/** Engineering references for mapped components (from the approved model mapping). */
+const ENGINEERING_REFERENCES: Record<string, EngineeringReference> = {
+  "worm-thrust-bearing-a": { document: "PI 4066", item: "36" },
+};
+
+/** Model-derived components have no inspection record in the demo data: status unknown. */
+const MODEL_DERIVED = new Set([
+  "worm-gear", "drive-gear", "translation-gear", "bevel-gear", "bevel-pinion", "worm-shaft",
+  "lance-hub-drive-shaft", "pinion-shaft", "worm-thrust-bearing-b",
+  "lance-hub-bearing-front", "lance-hub-bearing-rear", "drive-shaft-bearing-inner",
+  "drive-shaft-bearing-outer", "pinion-shaft-bearing-left", "pinion-shaft-bearing-right", "motor",
+]);
 
 /** Nodes with no inspection on record for an asset. */
 const uninspected: Record<string, string[]> = {
@@ -141,9 +176,27 @@ export const assetEntities: AssetEntity[] = assets.flatMap((asset) =>
     name: t.name,
     partNumber: t.partNumber,
     zone: t.zone,
-    recordedStatus: (uninspected[asset.id]?.includes(t.key) ? "unknown" : "healthy") as HealthStatus,
+    recordedStatus: (uninspected[asset.id]?.includes(t.key) || MODEL_DERIVED.has(t.key)
+      ? "unknown"
+      : "healthy") as HealthStatus,
+    sourceReference: ENGINEERING_REFERENCES[t.key] ?? null,
   })),
 );
+
+/**
+ * Component-level narratives for the primary demo issue (DEMO wording only).
+ * Live values, detections and statuses still come from the health engine.
+ */
+export const conditionNarratives: ConditionNarrative[] = assets.map((asset) => ({
+  id: `narrative-${asset.serialNumber}-worm-thrust-bearing-a`,
+  assetId: asset.id,
+  entityId: entityId(asset.id, "worm-thrust-bearing-a"),
+  title: "Elevated gearbox vibration trend",
+  observedTrend: "Gearbox vibration has increased over the simulated monitoring period",
+  inference: "The pattern may indicate increased wear, loading or degradation in the worm-drive area.",
+  suggestedAction:
+    "Consider inspecting the worm thrust bearing and surrounding worm-drive components during an appropriate maintenance opportunity.",
+}));
 
 // ---------------------------------------------------------------------------
 // Service history — the single source for last service / replacement dates
@@ -166,13 +219,14 @@ function countersAt(asset: Asset, date: string) {
 interface ServicePlan {
   outage: string;
   lubrication: string;
-  bearingReplacement: string | null;
+  /** Sample demo inspection of Worm Thrust Bearing A. */
+  wormBearingInspection: string;
 }
 
 const servicePlans: Record<string, ServicePlan> = {
-  "ik700-10482": { outage: "2026-03-18", lubrication: "2025-04-14", bearingReplacement: "2023-10-05" },
-  "ik700-10483": { outage: "2026-06-02", lubrication: "2025-05-14", bearingReplacement: "2024-05-21" },
-  "ik700-10484": { outage: "2026-01-27", lubrication: "2025-06-14", bearingReplacement: null },
+  "ik700-10482": { outage: "2026-03-18", lubrication: "2024-09-24", wormBearingInspection: "2025-03-26" },
+  "ik700-10483": { outage: "2026-06-02", lubrication: "2025-05-14", wormBearingInspection: "2026-06-02" },
+  "ik700-10484": { outage: "2026-01-27", lubrication: "2025-06-14", wormBearingInspection: "2026-01-27" },
 };
 
 export const serviceEvents: ServiceEvent[] = assets.flatMap((asset) => {
@@ -201,14 +255,9 @@ export const serviceEvents: ServiceEvent[] = assets.flatMap((asset) => {
     event(null, plan.outage, "inspection", "Routine outage inspection of the complete sootblower (demo record).", "Demo field service"),
     event("gearbox", plan.lubrication, "lubrication", "Gearbox oil change (demo record).", "Demo site maintenance"),
     event("gearbox", plan.outage, "inspection", "Gearbox inspection; no abnormal findings recorded (demo record).", "Demo field service"),
-    event("bearing-b204", plan.outage, "inspection", "Bearing checked for play and noise; within demo acceptance at time of inspection (demo record).", "Demo field service"),
+    event("worm-thrust-bearing-a", plan.wormBearingInspection, "inspection", "Worm thrust bearing checked for play and noise; no abnormal condition recorded (sample demo record).", "Demo field service"),
     event("carriage", plan.outage, "inspection", "Carriage wheels and track inspected (demo record).", "Demo field service"),
   ];
-  if (plan.bearingReplacement) {
-    events.push(
-      event("bearing-b204", plan.bearingReplacement, "replacement", "Bearing replaced during planned outage (demo record).", "Demo field service"),
-    );
-  }
   if (!uninspected[asset.id]?.includes("poppet-valve")) {
     events.push(event("poppet-valve", plan.outage, "inspection", "Poppet valve seat inspected (demo record).", "Demo field service"));
   }
@@ -227,8 +276,8 @@ const documentTemplate: { key: string | null; kind: DocumentKind; title: string;
   { key: "gearbox", kind: "pi_sheet", title: "Gearbox PI Sheet", code: "PI-10", revision: "B", updated: "2023-10-01" },
   { key: "gearbox", kind: "procedure", title: "Gearbox Service Procedure", code: "PRC-10", revision: "A", updated: "2023-10-01" },
   { key: "gearbox", kind: "bom", title: "Gearbox BOM", code: "BOM-10", revision: "B", updated: "2023-10-01" },
-  { key: "bearing-b204", kind: "drawing", title: "Bearing B-204 Detail", code: "DWG-11", revision: "A", updated: "2023-10-01" },
-  { key: "bearing-b204", kind: "pi_sheet", title: "Bearing B-204 PI Reference", code: "PI-11", revision: "A", updated: "2023-10-01" },
+  { key: "worm-shaft", kind: "drawing", title: "Worm Shaft & Thrust Bearing Arrangement", code: "DWG-11", revision: "A", updated: "2023-10-01" },
+  { key: "worm-shaft", kind: "pi_sheet", title: "Worm Shaft PI Sheet", code: "PI-11", revision: "A", updated: "2023-10-01" },
   { key: "carriage", kind: "drawing", title: "Carriage Assembly Drawing", code: "DWG-20", revision: "A", updated: "2022-06-15" },
   { key: "carriage", kind: "pi_sheet", title: "Carriage PI Sheet", code: "PI-20", revision: "A", updated: "2022-06-15" },
   { key: "feed-tube", kind: "drawing", title: "Feed Tube Drawing", code: "DWG-30", revision: "A", updated: "2021-03-02" },
@@ -253,7 +302,18 @@ export const documents: DocumentRecord[] = assets.flatMap((asset) =>
 // Parts / BOM — each line belongs to one node's bill of materials.
 // ---------------------------------------------------------------------------
 
-const bomTemplate: { owner: string | null; partNumber: string; description: string; quantity: number; link: string | null }[] = [
+interface BomLine {
+  owner: string | null;
+  /** Fictional demo part number; null where none is approved. */
+  partNumber: string | null;
+  description: string;
+  quantity: number;
+  link: string | null;
+  ref?: EngineeringReference;
+  note?: string;
+}
+
+const bomTemplate: BomLine[] = [
   // Asset BOM: major assemblies
   { owner: null, partNumber: "DEMO-ASM-CAR", description: "Carriage assembly", quantity: 1, link: "carriage" },
   { owner: null, partNumber: "DEMO-ASM-GBX", description: "Gearbox assembly", quantity: 1, link: "gearbox" },
@@ -261,14 +321,15 @@ const bomTemplate: { owner: string | null; partNumber: string; description: stri
   { owner: null, partNumber: "DEMO-ASM-LT", description: "Lance tube assembly", quantity: 1, link: "lance-tube" },
   { owner: null, partNumber: "DEMO-ASM-PV", description: "Poppet valve assembly", quantity: 1, link: "poppet-valve" },
   // Gearbox BOM
-  { owner: "gearbox", partNumber: "DEMO-B-204", description: "Bearing B-204", quantity: 1, link: "bearing-b204" },
   { owner: "gearbox", partNumber: "DEMO-GS-100", description: "Gear set", quantity: 1, link: "gear-set" },
   { owner: "gearbox", partNumber: "DEMO-GBX-SEAL", description: "Gearbox seal kit", quantity: 1, link: null },
   { owner: "gearbox", partNumber: "DEMO-GBX-OIL", description: "Gearbox lubricant, 1 L", quantity: 2, link: null },
-  // Bearing B-204: the component and applicable related parts
-  { owner: "bearing-b204", partNumber: "DEMO-B-204", description: "Bearing B-204", quantity: 1, link: null },
-  { owner: "bearing-b204", partNumber: "DEMO-LN-204", description: "Bearing lock nut", quantity: 1, link: null },
-  { owner: "bearing-b204", partNumber: "DEMO-GR-02", description: "Bearing grease, cartridge", quantity: 1, link: null },
+  // Worm shaft: its two thrust bearings (no approved part number exists).
+  { owner: "worm-shaft", partNumber: null, description: "Worm thrust bearing", quantity: 2, link: null, ref: { document: "PI 4066", item: "36" } },
+  // Worm Thrust Bearing A: the component plus generic related items for planning.
+  { owner: "worm-thrust-bearing-a", partNumber: null, description: "Worm thrust bearing", quantity: 1, link: null, ref: { document: "PI 4066", item: "36" } },
+  { owner: "worm-thrust-bearing-a", partNumber: null, description: "Associated worm shaft seal", quantity: 1, link: null, note: "Reference to be confirmed" },
+  { owner: "worm-thrust-bearing-a", partNumber: null, description: "Bearing retaining hardware", quantity: 1, link: null, note: "Reference to be confirmed" },
   // Gear set
   { owner: "gear-set", partNumber: "DEMO-GS-100", description: "Gear set", quantity: 1, link: null },
   // Carriage
@@ -295,6 +356,8 @@ export const parts: PartRecord[] = assets.flatMap((asset) => {
       description: line.description,
       quantity: line.quantity,
       linkedEntityId: line.link ? entityId(asset.id, line.link) : null,
+      sourceReference: line.ref ?? null,
+      note: line.note ?? null,
     };
   });
 });

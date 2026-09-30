@@ -81,6 +81,8 @@ export type SimulatedTelemetryProvider = TelemetryProvider & SimulationControls;
 export interface SignalAssessment {
   key: TelemetrySignalKey;
   latest: number;
+  /** Value at the start of the assessed telemetry window. */
+  windowStart: number;
   status: HealthStatus;
   /** Least-squares slope over recent samples, in units per sample. */
   trendPerSample: number;

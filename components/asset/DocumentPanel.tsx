@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, CornerLeftUp, FileText, ScanLine } from "lucide-react";
+import { ArrowRight, BookOpen, CornerLeftUp, FileText, ScanLine } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
 import type { HierarchyNode } from "@/lib/asset-model";
-import type { DocumentKind, DocumentRecord, PartRecord } from "@/types/installed-base";
+import type { DocumentKind, DocumentRecord, EngineeringReference, PartRecord } from "@/types/installed-base";
 
 const KIND_LABEL: Record<DocumentKind, string> = {
   drawing: "Drawing",
@@ -32,6 +32,7 @@ export function DocumentPanel({
   documents,
   inheritedFrom,
   parts,
+  engineeringReference = null,
   scopeName,
   emptyLabel,
   onSelect,
@@ -39,6 +40,8 @@ export function DocumentPanel({
   documents: DocumentRecord[];
   inheritedFrom: HierarchyNode | null;
   parts?: PartRecord[];
+  /** Engineering document item for the selected component (Interactive PI). */
+  engineeringReference?: EngineeringReference | null;
   scopeName: string;
   emptyLabel: string;
   onSelect: (id: string) => void;
@@ -47,10 +50,46 @@ export function DocumentPanel({
   const [activeItem, setActiveItem] = useState<number | null>(null);
   const active = documents.find((d) => d.id === activeId) ?? documents[0];
 
+  const refLabel = engineeringReference
+    ? `${engineeringReference.document} · Item ${engineeringReference.item}`
+    : null;
+  // The BOM line carrying the same engineering reference, if any.
+  const refPart = engineeringReference
+    ? parts?.find(
+        (p) =>
+          p.sourceReference?.document === engineeringReference.document &&
+          p.sourceReference.item === engineeringReference.item,
+      )
+    : undefined;
+  const [refOpened, setRefOpened] = useState(false);
+
   if (!active) return <EmptyState title={`No ${emptyLabel} filed for ${scopeName}`} />;
 
   return (
     <div>
+      {refLabel && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded border border-info/30 bg-info-soft px-3 py-2 text-xs">
+          <span className="flex items-center gap-1.5 text-ink-2">
+            <BookOpen size={13} className="text-info" aria-hidden />
+            Engineering reference for {scopeName}: <span className="font-mono font-semibold text-ink">{refLabel}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              if (refPart) setActiveItem(refPart.itemNumber);
+              setRefOpened(true);
+            }}
+            className="inline-flex items-center gap-1 rounded bg-navy-900 px-2.5 py-1 font-medium text-white hover:bg-navy-800"
+          >
+            Open {refLabel} <ArrowRight size={12} aria-hidden />
+          </button>
+          {refOpened && (
+            <p className="w-full text-[11px] text-ink-3">
+              {refPart ? `Item selected below (callout ${refPart.itemNumber}).` : ""} Direct linking into the {engineeringReference!.document} viewer is not yet available.
+            </p>
+          )}
+        </div>
+      )}
       {inheritedFrom && <InheritedNotice from={inheritedFrom} scopeName={scopeName} what={emptyLabel} />}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
         <ul className="space-y-1.5">
@@ -125,6 +164,7 @@ export function DocumentPanel({
                   <th className="px-3 py-2 font-medium">Item</th>
                   <th className="px-3 py-2 font-medium">Demo part no.</th>
                   <th className="px-3 py-2 font-medium">Description</th>
+                  <th className="px-3 py-2 font-medium">Reference</th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -138,8 +178,13 @@ export function DocumentPanel({
                     }`}
                   >
                     <td className="px-3 py-1.5 font-mono text-ink-2">{p.itemNumber}</td>
-                    <td className="px-3 py-1.5 font-mono text-ink">{p.partNumber}</td>
+                    <td className="px-3 py-1.5 font-mono text-ink">
+                      {p.partNumber ?? <span className="font-sans text-ink-3">Not assigned</span>}
+                    </td>
                     <td className="px-3 py-1.5 text-ink-2">{p.description}</td>
+                    <td className="px-3 py-1.5 font-mono text-xs text-ink-2">
+                      {p.sourceReference ? `${p.sourceReference.document} · Item ${p.sourceReference.item}` : (p.note ?? "—")}
+                    </td>
                     <td className="px-3 py-1.5 text-right">
                       {p.linkedEntityId && (
                         <button

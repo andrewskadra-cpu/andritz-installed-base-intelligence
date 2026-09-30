@@ -94,6 +94,30 @@ export interface AssetEntity {
    * for monitored regions. "unknown" means no recent inspection on record.
    */
   recordedStatus: HealthStatus;
+  /** Engineering document reference for this component, when mapped. */
+  sourceReference: EngineeringReference | null;
+}
+
+/** Pointer into an engineering document (e.g. a PI form item). */
+export interface EngineeringReference {
+  document: string;
+  item: string;
+}
+
+/**
+ * DEMO narrative for a component-level condition. Supplies component-specific
+ * wording; live values, detections and statuses still come from the health
+ * engine, and nothing here can mark a condition confirmed.
+ */
+export interface ConditionNarrative {
+  id: string;
+  assetId: string;
+  entityId: string;
+  title: string;
+  /** Used only when the triggering signal actually rose over the telemetry window. */
+  observedTrend: string;
+  inference: string;
+  suggestedAction: string;
 }
 
 export type ServiceEventType = "inspection" | "repair" | "replacement" | "lubrication" | "commissioning";
@@ -140,7 +164,12 @@ export interface PartRecord {
   entityId: string;
   /** Item number as it appears on the related PI sheet. */
   itemNumber: number;
-  partNumber: string;
+  /** Fictional demo part number; null when no approved number exists. */
+  partNumber: string | null;
+  /** Engineering reference for the line, when mapped. */
+  sourceReference: EngineeringReference | null;
+  /** Planning note, e.g. "Reference to be confirmed". */
+  note: string | null;
   description: string;
   quantity: number;
   /** When the line is itself a node in the hierarchy (e.g. an assembly). */
@@ -197,6 +226,7 @@ export interface AssetRecords {
   serviceEvents: ServiceEvent[];
   documents: DocumentRecord[];
   parts: PartRecord[];
+  conditionNarratives: ConditionNarrative[];
 }
 
 export type SearchResultKind = "customer" | "plant" | "unit" | "asset" | "assembly" | "component";

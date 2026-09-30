@@ -78,6 +78,8 @@ export interface OutageInspectionRecommendation {
   assetName: string;
   entityId: string;
   entityName: string;
+  /** Equipment path above the target, e.g. "Gearbox Assembly › Worm Shaft". */
+  areaPath: string;
   /** Suggestion wording ("Consider …"). Never an instruction. */
   action: string;
   timing: SuggestedTiming;
@@ -87,7 +89,12 @@ export interface OutageInspectionRecommendation {
 }
 
 export interface ContingencyPart {
-  partNumber: string;
+  /** Fictional demo part number; null when no approved number exists. */
+  partNumber: string | null;
+  /** Engineering reference for the line (e.g. "PI 4066 · Item 36"). */
+  reference: string | null;
+  /** Planning note such as "Reference to be confirmed". */
+  note: string | null;
   description: string;
   quantity: number;
   assetId: string;
@@ -112,6 +119,8 @@ export interface ComponentForReview {
   id: string;
   name: string;
   partNumber: string | null;
+  /** Engineering reference (e.g. "PI 4066 · Item 36"), when mapped. */
+  reference: string | null;
   status: HealthStatus;
   parentName: string;
   reason: string;

@@ -54,7 +54,10 @@ export function HealthSummary({
     ];
   } else {
     fields = [
-      { label: "Demo part number", value: node.partNumber ?? "—", mono: true },
+      { label: "Demo part number", value: node.partNumber ?? "Not assigned", mono: true },
+      ...(node.sourceReference
+        ? [{ label: "Engineering reference", value: `${node.sourceReference.document} · Item ${node.sourceReference.item}`, mono: true }]
+        : []),
       { label: "Parent", value: parent?.name ?? "—" },
       { label: "Last inspection", value: date(m.lastInspection), mono: true },
       { label: "Last replacement", value: date(m.lastReplacement), mono: true },

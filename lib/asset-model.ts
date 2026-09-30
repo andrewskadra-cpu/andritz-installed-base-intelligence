@@ -9,16 +9,20 @@
  */
 
 import { worstStatus } from "@/lib/telemetry/health-engine";
+import { formatSignal } from "@/lib/telemetry/signals";
 import type {
   ActiveCondition,
   AssetRecords,
+  ConditionEvidence,
+  ConditionNarrative,
+  EngineeringReference,
   EntityType,
   HealthStatus,
   InspectionRecommendation,
   ServiceEvent,
   ViewerZone,
 } from "@/types/installed-base";
-import type { HealthAssessment } from "@/types/telemetry";
+import type { HealthAssessment, TelemetrySignalKey } from "@/types/telemetry";
 
 export type NodeType = "asset" | EntityType;
 
@@ -30,6 +34,8 @@ export interface HierarchyNode {
   childIds: string[];
   depth: number;
   partNumber: string | null;
+  /** Engineering document reference (e.g. a PI form item), when mapped. */
+  sourceReference: EngineeringReference | null;
   zone: ViewerZone | null;
   /** Status observed directly on this node (telemetry or inspection record). */
   ownStatus: HealthStatus;
@@ -46,6 +52,31 @@ export interface AssetModel {
   recommendations: InspectionRecommendation[];
   /** Live cycle count, falling back to the recorded value. */
   currentCycles: number;
+}
+
+/**
+ * Apply a component narrative: the OBSERVED trend sentence is used only when
+ * the triggering signal actually rose over the telemetry window, and the
+ * INFERRED text is replaced. DETECTED and CONFIRMED are left untouched.
+ */
+function applyNarrative(
+  evidence: ConditionEvidence[],
+  narrative: ConditionNarrative,
+  signals: TelemetrySignalKey[],
+  assessment: HealthAssessment,
+): ConditionEvidence[] {
+  const key = signals[0];
+  const s = key ? assessment.signals[key] : undefined;
+  return evidence.map((ev) => {
+    if (ev.level === "observed" && s && s.latest > s.windowStart) {
+      return {
+        ...ev,
+        statement: `${narrative.observedTrend} (${formatSignal(key, s.windowStart)} → ${formatSignal(key, s.latest)}).`,
+      };
+    }
+    if (ev.level === "inferred") return { ...ev, statement: narrative.inference };
+    return ev;
+  });
 }
 
 /** Unknown only when nothing is known; otherwise the worst known status. */
@@ -66,6 +97,7 @@ export function buildAssetModel(records: AssetRecords, assessment: HealthAssessm
     childIds: [],
     depth: 0,
     partNumber: null,
+    sourceReference: null,
     zone: null,
     ownStatus: assessment?.status ?? "unknown",
     status: "unknown",
@@ -80,6 +112,7 @@ export function buildAssetModel(records: AssetRecords, assessment: HealthAssessm
       childIds: [],
       depth: 0,
       partNumber: e.partNumber,
+      sourceReference: e.sourceReference,
       zone: e.zone,
       ownStatus: live ?? e.recordedStatus,
       status: "unknown",
@@ -117,19 +150,29 @@ export function buildAssetModel(records: AssetRecords, assessment: HealthAssessm
             : ev,
         )
       : finding.evidence;
+    // Component-specific DEMO wording, if any. Live values, detections and
+    // CONFIRMED still come from the engine / service records above.
+    const narrative = records.conditionNarratives.find((n) => n.entityId === id);
+    const worded = narrative ? applyNarrative(evidence, narrative, finding.signals, assessment!) : evidence;
     conditions.push({
       id: `live-${finding.zone}`,
       assetId: asset.id,
       entityId: id,
-      title: finding.title,
+      title: narrative?.title ?? finding.title,
       status: finding.status,
       technicianConfirmed: Boolean(confirmedBy),
       confirmedByEventId: confirmedBy?.id ?? null,
-      evidence,
+      evidence: worded,
       signals: finding.signals,
       reasons: finding.reasons,
     });
-    recommendations.push({ id: `live-rec-${finding.zone}`, assetId: asset.id, entityId: id, ...finding.recommendation });
+    recommendations.push({
+      id: `live-rec-${finding.zone}`,
+      assetId: asset.id,
+      entityId: id,
+      ...finding.recommendation,
+      action: narrative?.suggestedAction ?? finding.recommendation.action,
+    });
   }
 
   return {

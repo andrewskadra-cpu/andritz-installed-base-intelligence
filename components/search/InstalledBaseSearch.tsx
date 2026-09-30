@@ -16,7 +16,7 @@ const KIND_META: Record<SearchResultKind, { label: string; icon: LucideIcon }> =
   component: { label: "Part", icon: Wrench },
 };
 
-const SUGGESTIONS = ["Demo Energy", "Riverbend", "10482", "IK-700", "Gearbox", "B-204"];
+const SUGGESTIONS = ["Demo Energy", "Riverbend", "10482", "IK-700", "Gearbox", "Thrust Bearing"];
 const MAX_RESULTS = 12;
 
 function matches(entry: SearchEntry, tokens: string[]) {

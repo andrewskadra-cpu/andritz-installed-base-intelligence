@@ -302,7 +302,9 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
                         </span>
                         <StatusBadge status={c.status} size="sm" />
                       </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-ink-3">{c.partNumber}</span>
+                      <span className="mt-0.5 block font-mono text-[11px] text-ink-3">
+                        {[c.partNumber, c.reference].filter(Boolean).join(" · ") || "No part number assigned"}
+                      </span>
                       <span className="mt-0.5 block text-xs text-ink-2">{c.reason}</span>
                     </Link>
                   </li>
@@ -332,7 +334,10 @@ function Inspections({ scope }: { scope: OutageScope }) {
             <tr key={r.id}>
               <td className="px-3 py-2 font-mono text-ink-3">{i + 1}</td>
               <td className="px-3 py-2">
-                <div className="text-xs text-ink-3">{r.assetName}</div>
+                <div className="text-xs text-ink-3">
+                  {r.assetName}
+                  {r.areaPath && ` · ${r.areaPath}`}
+                </div>
                 <div className="font-medium text-ink">{r.entityName}</div>
               </td>
               <td className="min-w-64 px-3 py-2">
@@ -397,11 +402,14 @@ function Parts({ scope }: { scope: OutageScope }) {
       {rows.length === 0 ? (
         <p className="text-sm text-ink-3">No contingency parts suggested.</p>
       ) : (
-        <Table head={["Demo part no.", "Description", "Qty", "For", "Consideration", "Traceability"]}>
+        <Table head={["Demo part no.", "Description", "Reference", "Qty", "For", "Consideration", "Traceability"]}>
           {rows.map((p) => (
-            <tr key={`${p.assetId}-${p.partNumber}`}>
-              <td className="whitespace-nowrap px-3 py-2 font-mono font-medium text-ink">{p.partNumber}</td>
+            <tr key={`${p.assetId}-${p.partNumber ?? p.description}`}>
+              <td className="whitespace-nowrap px-3 py-2 font-mono font-medium text-ink">
+                {p.partNumber ?? <span className="font-sans font-normal text-ink-3">Not assigned</span>}
+              </td>
               <td className="px-3 py-2 text-ink-2">{p.description}</td>
+              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-ink-2">{p.reference ?? p.note ?? "—"}</td>
               <td className="px-3 py-2 text-right font-mono tabular text-ink">{p.quantity}</td>
               <td className="px-3 py-2">
                 <div className="text-xs text-ink-3">{p.assetName}</div>

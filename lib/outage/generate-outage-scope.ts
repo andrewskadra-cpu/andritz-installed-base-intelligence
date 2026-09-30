@@ -20,7 +20,14 @@ import {
 } from "@/lib/asset-model";
 import { formatDate } from "@/lib/format";
 import { SIGNAL_ORDER, TELEMETRY_SIGNALS, formatSignal } from "@/lib/telemetry/signals";
-import type { ActiveCondition, Customer, HealthStatus, Plant, PlantUnit } from "@/types/installed-base";
+import type {
+  ActiveCondition,
+  Customer,
+  EngineeringReference,
+  HealthStatus,
+  Plant,
+  PlantUnit,
+} from "@/types/installed-base";
 import type {
   ComponentForReview,
   ContingencyPart,
@@ -74,6 +81,21 @@ function signalTrace(model: AssetModel, key: TelemetrySignalKey): TraceRef {
 }
 
 const ruleTrace = (reason: string): TraceRef => ({ kind: "health_rule", label: reason, href: null });
+
+/** Names between the asset and the node, e.g. "Gearbox Assembly › Worm Shaft". */
+const areaPath = (model: AssetModel, id: string) =>
+  pathTo(model, id)
+    .slice(1, -1)
+    .map((n) => n.name)
+    .join(" › ");
+
+const refLabel = (ref: EngineeringReference | null) => (ref ? `${ref.document} · Item ${ref.item}` : null);
+
+/** Engineering reference of a node as a trace chip (e.g. "PI 4066 · Item 36"). */
+function referenceTrace(model: AssetModel, node: HierarchyNode): TraceRef[] {
+  const label = refLabel(node.sourceReference);
+  return label ? [{ kind: "document", label: `${label} · engineering reference`, href: hrefFor(model, node.id) }] : [];
+}
 
 // ---------------------------------------------------------------------------
 // Per-asset sections
@@ -150,6 +172,7 @@ function buildInspections(model: AssetModel, checklist: InspectionChecklistItem[
       assetName: asset.name,
       entityId: rec.entityId,
       entityName: node.name,
+      areaPath: areaPath(model, rec.entityId),
       action: rec.action,
       timing: rec.priority === "prompt" ? "earliest_opportunity" : "planned_outage",
       basis: rec.rationale,
@@ -159,6 +182,7 @@ function buildInspections(model: AssetModel, checklist: InspectionChecklistItem[
         ...(condition?.signals ?? []).map((k) => signalTrace(model, k)),
         ...(condition?.reasons ?? []).map(ruleTrace),
         ...(procedure ? [{ kind: "document" as const, label: `${procedure.documentNumber} · ${procedure.title}`, href: hrefFor(model, rec.entityId) }] : []),
+        ...referenceTrace(model, node),
       ],
     });
   }
@@ -191,6 +215,7 @@ function buildInspections(model: AssetModel, checklist: InspectionChecklistItem[
       assetName: asset.name,
       entityId: item.entityId,
       entityName: node.name,
+      areaPath: areaPath(model, item.entityId),
       action: item.action,
       timing: worst === "critical" ? "earliest_opportunity" : "planned_outage",
       basis: [
@@ -227,7 +252,12 @@ function affectedNodes(model: AssetModel): HierarchyNode[] {
 
 function buildComponents(model: AssetModel): ComponentForReview[] {
   return Object.values(model.nodes)
-    .filter((n) => n.type === "component" && (n.status === "critical" || n.status === "attention"))
+    // A component's OWN status or conditions qualify it; a critical child alone does not.
+    .filter(
+      (n) =>
+        n.type === "component" &&
+        (n.ownStatus === "critical" || n.ownStatus === "attention" || model.conditions.some((c) => c.entityId === n.id)),
+    )
     .map((n) => {
       const condition = model.conditions.find((c) => c.entityId === n.id);
       const parent = n.parentId ? model.nodes[n.parentId] : null;
@@ -235,6 +265,7 @@ function buildComponents(model: AssetModel): ComponentForReview[] {
         id: n.id,
         name: n.name,
         partNumber: n.partNumber,
+        reference: refLabel(n.sourceReference),
         status: n.status,
         parentName: parent?.name ?? "",
         reason: condition ? `${condition.title} (${condition.reasons.join("; ").toLowerCase()})` : `Status ${n.status} within ${parent?.name}`,
@@ -274,7 +305,7 @@ function buildRecords(model: AssetModel, nodes: HierarchyNode[]): EngineeringRec
 function buildParts(model: AssetModel, nodes: HierarchyNode[]): ContingencyPart[] {
   const { asset, parts, documents } = model.records;
   const seen = new Map<string, ContingencyPart>();
-  for (const node of nodes) {
+  for (const node of [...nodes].sort((a, b) => b.depth - a.depth)) {
     const conditions = conditionsIn(model, node.id);
     if (conditions.length === 0) continue;
     const bomDoc = documents.find((d) => d.entityId === node.id && d.kind === "bom");
@@ -282,9 +313,13 @@ function buildParts(model: AssetModel, nodes: HierarchyNode[]): ContingencyPart[
       const linked = line.linkedEntityId ? model.nodes[line.linkedEntityId] : null;
       // Skip sub-assemblies and linked nodes with no indicators of their own.
       if (linked && (linked.type === "assembly" || conditionsIn(model, linked.id).length === 0)) continue;
-      if (seen.has(line.partNumber)) continue;
-      seen.set(line.partNumber, {
+      // Lines without an approved part number de-duplicate by description.
+      const key = line.partNumber ?? line.description.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.set(key, {
         partNumber: line.partNumber,
+        reference: refLabel(line.sourceReference),
+        note: line.note,
         description: line.description,
         quantity: line.quantity,
         assetId: asset.id,
@@ -299,6 +334,9 @@ function buildParts(model: AssetModel, nodes: HierarchyNode[]): ContingencyPart[
             href: hrefFor(model, node.id),
           },
           ...conditions.map((c) => ruleTrace(`${c.title} · ${model.nodes[c.entityId].name}`)),
+          ...(line.sourceReference
+            ? [{ kind: "document" as const, label: `${refLabel(line.sourceReference)} · engineering reference`, href: hrefFor(model, node.id) }]
+            : []),
         ],
       });
     }

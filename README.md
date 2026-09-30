@@ -24,7 +24,7 @@ npm run build
 | `/plants/[plantId]` | Plant overview with units and equipment status |
 | `/assets/[assetId]?entity=<id>` | Asset intelligence; `entity` selects an assembly or component |
 
-Demo entry point: `/assets/ik700-10482?entity=ik700-10482-bearing-b204`
+Demo entry point: `/assets/ik700-10482?entity=ik700-10482-worm-thrust-bearing-a` (Gearbox Assembly → Worm Shaft → Worm Thrust Bearing A)
 
 ## Structure
 

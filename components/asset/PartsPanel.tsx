@@ -46,6 +46,7 @@ export function PartsPanel({
               <th className="py-2 pr-4 font-medium">Item</th>
               <th className="py-2 pr-4 font-medium">Demo part no.</th>
               <th className="py-2 pr-4 font-medium">Description</th>
+              <th className="py-2 pr-4 font-medium">Reference</th>
               <th className="py-2 pr-4 text-right font-medium">Qty</th>
               <th className="py-2 pr-4 font-medium">Status</th>
               <th className="py-2" />
@@ -57,8 +58,19 @@ export function PartsPanel({
               return (
                 <tr key={p.id} className="border-b border-line last:border-0">
                   <td className="py-2 pr-4 font-mono text-ink-3">{p.itemNumber}</td>
-                  <td className="py-2 pr-4 font-mono font-medium text-ink">{p.partNumber}</td>
+                  <td className="py-2 pr-4 font-mono font-medium text-ink">
+                    {p.partNumber ?? <span className="font-sans font-normal text-ink-3">Not assigned</span>}
+                  </td>
                   <td className="py-2 pr-4 text-ink-2">{p.description}</td>
+                  <td className="py-2 pr-4 text-xs">
+                    {p.sourceReference ? (
+                      <span className="font-mono text-ink">
+                        {p.sourceReference.document} · Item {p.sourceReference.item}
+                      </span>
+                    ) : (
+                      <span className="text-ink-3">{p.note ?? "—"}</span>
+                    )}
+                  </td>
                   <td className="py-2 pr-4 text-right font-mono tabular text-ink">{p.quantity}</td>
                   <td className="py-2 pr-4">{linked && <StatusDot status={linked.status} />}</td>
                   <td className="py-2 text-right">
