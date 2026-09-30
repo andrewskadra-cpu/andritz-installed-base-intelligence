@@ -58,7 +58,7 @@ export const STATUS_META: Record<HealthStatus, StatusMeta> = {
 export const STATUS_ORDER: HealthStatus[] = ["critical", "attention", "healthy", "unknown"];
 
 /** Muted green used for healthy regions in the 3D view so faults stand out. */
-export const VIEWER_HEALTHY_TINT = "#9dbfaa";
+const VIEWER_HEALTHY_TINT = "#9dbfaa";
 
 export function viewerColor(status: HealthStatus) {
   return status === "healthy" ? VIEWER_HEALTHY_TINT : STATUS_META[status].hex;

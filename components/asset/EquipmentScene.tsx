@@ -21,8 +21,10 @@ export interface SceneZone {
 
 export interface EquipmentSceneProps {
   zones: SceneZone[];
-  /** Zones to emphasise. Null means the whole asset is in context. */
+  /** Zones to emphasise. Null means the whole asset is in focus. */
   focus: Set<ViewerZone> | null;
+  /** Parent zones kept partly visible around the focus. */
+  context: Set<ViewerZone>;
   onSelect: (nodeId: string) => void;
   /** Incrementing this value resets the camera to its initial view. */
   resetSignal: number;
@@ -35,6 +37,7 @@ const HALF_PI = Math.PI / 2;
 interface ZoneGroupProps {
   zone: SceneZone | undefined;
   focus: Set<ViewerZone> | null;
+  context: Set<ViewerZone>;
   hovered: ViewerZone | null;
   setHovered: (z: ViewerZone | null) => void;
   onSelect: (nodeId: string) => void;
@@ -47,6 +50,7 @@ interface ZoneGroupProps {
 function ZoneGroup({
   zone,
   focus,
+  context,
   hovered,
   setHovered,
   onSelect,
@@ -56,19 +60,22 @@ function ZoneGroup({
 }: ZoneGroupProps) {
   if (!zone) return null;
   const inFocus = focus === null || focus.has(zone.zone);
+  const inContext = !inFocus && context.has(zone.zone);
   const isHovered = hovered === zone.zone;
   const color = viewerColor(zone.status);
   const emphasised = focus !== null && inFocus;
+  const opacity = inFocus ? 1 : inContext ? 0.5 : 0.22;
 
   const material = (
     <meshStandardMaterial
-      color={inFocus ? color : STEEL}
+      color={inFocus || inContext ? color : STEEL}
       metalness={0.35}
       roughness={0.55}
-      transparent={!inFocus}
-      opacity={inFocus ? 1 : 0.28}
+      transparent={opacity < 1}
+      opacity={opacity}
+      depthWrite={opacity === 1}
       emissive={color}
-      emissiveIntensity={isHovered ? 0.35 : emphasised ? 0.18 : 0}
+      emissiveIntensity={isHovered ? 0.35 : emphasised ? 0.2 : 0}
     />
   );
 
@@ -141,13 +148,13 @@ function Outline({ show }: { show: boolean }) {
   return show ? <Edges color="#0e1c34" threshold={20} /> : null;
 }
 
-export default function EquipmentScene({ zones, focus, onSelect, resetSignal }: EquipmentSceneProps) {
+export default function EquipmentScene({ zones, focus, context, onSelect, resetSignal }: EquipmentSceneProps) {
   const [hovered, setHovered] = useState<ViewerZone | null>(null);
   const labelLayer = useRef<HTMLDivElement>(null);
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const byZone = (z: ViewerZone) => zones.find((s) => s.zone === z);
   const outlined = (z: ViewerZone) => focus !== null && focus.has(z);
-  const common = { focus, hovered, setHovered, onSelect, labelLayer };
+  const common = { focus, context, hovered, setHovered, onSelect, labelLayer };
 
   useEffect(() => {
     if (resetSignal > 0) controls.current?.reset();

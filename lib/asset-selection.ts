@@ -1,108 +1,87 @@
 /**
- * Pure helpers that resolve the selected hierarchy node on the asset page and
- * scope the asset's data to that node and its descendants.
+ * Resolves the selected hierarchy node on the asset page and scopes the
+ * asset's data to it. All functions are generic over hierarchy depth.
  */
 
-import type {
-  AssetContext,
-  HierarchyLevel,
-  OperatingRecord,
-  ViewerZone,
-} from "@/types/installed-base";
+import { SIGNAL_ORDER } from "@/lib/telemetry/signals";
+import { signalsForZones } from "@/lib/telemetry/health-engine";
+import type { DocumentKind, ViewerZone } from "@/types/installed-base";
+import type { TelemetrySignalKey } from "@/types/telemetry";
+import { pathTo, subtreeIds, type AssetModel, type HierarchyNode } from "./asset-model";
 
-export interface SelectedNode {
-  id: string;
-  level: HierarchyLevel;
-  name: string;
-  subtitle: string;
-  record: OperatingRecord;
-  /** This node plus every descendant id — used to scope data panels. */
+export interface Selection {
+  node: HierarchyNode;
+  /** Asset root down to the selected node. */
+  path: HierarchyNode[];
+  /** Selected node plus every descendant id. */
   scopeIds: Set<string>;
-  /** Ids from the asset down to this node (inclusive). */
-  pathIds: string[];
-  /** Viewer zone to emphasise, or null for the whole asset. */
-  zone: ViewerZone | null;
+  /** Zones to emphasise in the viewer; null means the whole asset is in focus. */
+  focusZones: Set<ViewerZone> | null;
+  /** Ancestor zones kept visible as parent context. */
+  contextZones: Set<ViewerZone>;
+  /** Set when the node has no geometry/monitoring of its own and is shown through this ancestor. */
+  monitoredVia: HierarchyNode | null;
 }
 
-export function resolveSelection(ctx: AssetContext, nodeId: string | null): SelectedNode {
-  const component = ctx.components.find((c) => c.id === nodeId);
-  if (component) {
-    return {
-      id: component.id,
-      level: "component",
-      name: component.name,
-      subtitle: `Component · ${component.partNumber}`,
-      record: component,
-      scopeIds: new Set([component.id]),
-      pathIds: [ctx.asset.id, component.assemblyId, component.id],
-      zone: component.viewerZone,
-    };
+export function resolveSelection(model: AssetModel, selectedId: string | null): Selection {
+  const node = (selectedId && model.nodes[selectedId]) || model.nodes[model.rootId];
+  const path = pathTo(model, node.id);
+  const scopeIds = subtreeIds(model, node.id);
+
+  let focusZones: Set<ViewerZone> | null = null;
+  const contextZones = new Set<ViewerZone>();
+  let monitoredVia: HierarchyNode | null = null;
+  if (node.type !== "asset") {
+    focusZones = new Set([...scopeIds].flatMap((id) => (model.nodes[id].zone ? [model.nodes[id].zone!] : [])));
+    // A node without its own geometry is shown through its nearest ancestor.
+    const ancestors = path.slice(0, -1).reverse();
+    if (focusZones.size === 0) {
+      monitoredVia = ancestors.find((a) => a.zone) ?? null;
+      if (monitoredVia?.zone) focusZones.add(monitoredVia.zone);
+    }
+    for (const a of ancestors) if (a.zone && !focusZones.has(a.zone)) contextZones.add(a.zone);
   }
 
-  const assembly = ctx.assemblies.find((a) => a.id === nodeId);
-  if (assembly) {
-    const childIds = ctx.components.filter((c) => c.assemblyId === assembly.id).map((c) => c.id);
-    return {
-      id: assembly.id,
-      level: "assembly",
-      name: assembly.name,
-      subtitle: "Assembly",
-      record: assembly,
-      scopeIds: new Set([assembly.id, ...childIds]),
-      pathIds: [ctx.asset.id, assembly.id],
-      zone: assembly.viewerZone,
-    };
-  }
-
-  return {
-    id: ctx.asset.id,
-    level: "asset",
-    name: ctx.asset.name,
-    subtitle: `${ctx.asset.equipmentType} · ${ctx.asset.productLine}`,
-    record: ctx.asset,
-    scopeIds: new Set([
-      ctx.asset.id,
-      ...ctx.assemblies.map((a) => a.id),
-      ...ctx.components.map((c) => c.id),
-    ]),
-    pathIds: [ctx.asset.id],
-    zone: null,
-  };
+  return { node, path, scopeIds, focusZones, contextZones, monitoredVia };
 }
 
-export function nodeName(ctx: AssetContext, id: string): string {
-  if (id === ctx.asset.id) return ctx.asset.name;
-  return (
-    ctx.assemblies.find((a) => a.id === id)?.name ??
-    ctx.components.find((c) => c.id === id)?.name ??
-    id
-  );
+export function scopeConditions(model: AssetModel, sel: Selection) {
+  return model.conditions.filter((c) => sel.scopeIds.has(c.entityId));
 }
 
-export function scopeConditions(ctx: AssetContext, sel: SelectedNode) {
-  return ctx.conditions.filter((c) => sel.scopeIds.has(c.targetId));
+export function scopeRecommendations(model: AssetModel, sel: Selection) {
+  return model.recommendations.filter((r) => sel.scopeIds.has(r.entityId));
 }
 
-export function scopeRecommendations(ctx: AssetContext, sel: SelectedNode) {
-  return ctx.recommendations.filter((r) => sel.scopeIds.has(r.targetId));
+export function scopeSignals(sel: Selection): TelemetrySignalKey[] {
+  return sel.focusZones === null ? SIGNAL_ORDER : signalsForZones(sel.focusZones);
 }
 
-export function scopeChannels(ctx: AssetContext, sel: SelectedNode) {
-  if (sel.level === "asset") return ctx.sensorChannels;
-  return ctx.sensorChannels.filter((c) => c.targetIds.some((id) => sel.scopeIds.has(id)));
-}
-
-export function scopeServiceEvents(ctx: AssetContext, sel: SelectedNode) {
-  return ctx.serviceEvents
-    .filter((e) => sel.scopeIds.has(e.targetId) || (sel.level !== "asset" && e.targetId === ctx.asset.id))
+export function scopeServiceEvents(model: AssetModel, sel: Selection) {
+  return model.records.serviceEvents
+    .filter((e) => sel.scopeIds.has(e.entityId))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function scopeDocuments(ctx: AssetContext, sel: SelectedNode) {
-  if (sel.level === "asset") return ctx.documents;
-  return ctx.documents.filter((d) => d.targetIds.includes(sel.id));
+/**
+ * Records attached to the selected node. When the node has none, falls back to
+ * the nearest ancestor that does and reports which one.
+ */
+function nearestAttached<T extends { entityId: string }>(items: T[], sel: Selection) {
+  for (const node of [...sel.path].reverse()) {
+    const own = items.filter((i) => i.entityId === node.id);
+    if (own.length > 0) return { items: own, inheritedFrom: node.id === sel.node.id ? null : node };
+  }
+  return { items: [] as T[], inheritedFrom: null };
 }
 
-export function scopeParts(ctx: AssetContext, sel: SelectedNode) {
-  return ctx.parts.filter((p) => sel.scopeIds.has(p.targetId));
+export function scopeDocuments(model: AssetModel, sel: Selection, kinds: DocumentKind[]) {
+  return nearestAttached(
+    model.records.documents.filter((d) => kinds.includes(d.kind)),
+    sel,
+  );
+}
+
+export function scopeParts(model: AssetModel, sel: Selection) {
+  return nearestAttached(model.records.parts, sel);
 }

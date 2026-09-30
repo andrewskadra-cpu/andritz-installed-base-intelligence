@@ -9,9 +9,8 @@ import { HealthBar } from "@/components/ui/HealthBar";
 import { KeyValue } from "@/components/ui/KeyValue";
 import { SectionLabel } from "@/components/ui/Panel";
 import {
-  getAssetsForPlant,
-  getConditionCounts,
   getCustomer,
+  getPlantAssetSummaries,
   getPlantsForCustomer,
   getUnitsForPlant,
   summarizeHealth,
@@ -30,13 +29,12 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[cu
   const plants = await getPlantsForCustomer(customer.id);
   const plantRows = await Promise.all(
     plants.map(async (plant) => {
-      const [units, assets] = await Promise.all([getUnitsForPlant(plant.id), getAssetsForPlant(plant.id)]);
+      const [units, assets] = await Promise.all([getUnitsForPlant(plant.id), getPlantAssetSummaries(plant.id)]);
       return { plant, units, assets, health: summarizeHealth(assets.map((a) => a.status)) };
     }),
   );
   const allAssets = plantRows.flatMap((r) => r.assets);
-  const conditionCounts = await getConditionCounts(allAssets.map((a) => a.id));
-  const conditionTotal = Object.values(conditionCounts).reduce((a, b) => a + b, 0);
+  const conditionTotal = allAssets.reduce((n, a) => n + a.conditionCount, 0);
 
   return (
     <>
@@ -54,17 +52,18 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[cu
           </div>
           {customer.isDemo && <DemoBadge />}
         </div>
-        <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <KeyValue label="Industry" value={customer.industry} />
           <KeyValue label="Region" value={customer.region} />
           <KeyValue label="Account" value={customer.accountManager} />
           <KeyValue label="Plants" value={plants.length} mono />
+          <KeyValue label="Installed assets" value={allAssets.length} mono />
         </dl>
       </div>
 
       <main className="space-y-8 px-4 py-6 lg:px-8">
         <section>
-          <SectionLabel>Installed-base health</SectionLabel>
+          <SectionLabel>Installed-base health · derived from demo telemetry</SectionLabel>
           <div className="mt-3">
             <PlantHealthSummary
               summary={summarizeHealth(allAssets.map((a) => a.status))}

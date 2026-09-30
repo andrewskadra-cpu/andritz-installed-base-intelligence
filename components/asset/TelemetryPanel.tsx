@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { EvidenceBadge } from "@/components/ui/EvidenceBadge";
-import { DemoBadge } from "@/components/ui/DemoBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatShortDate } from "@/lib/format";
-import type { SensorChannel, SensorReading } from "@/types/installed-base";
+import { EvidenceBadge } from "@/components/ui/EvidenceBadge";
+import { LiveDataBadge } from "@/components/ui/LiveDataBadge";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatNumber, formatTime } from "@/lib/format";
+import { TELEMETRY_SIGNALS } from "@/lib/telemetry/signals";
+import type { HealthStatus, SensorReading } from "@/types/installed-base";
+import type {
+  HealthAssessment,
+  SignalAssessment,
+  TelemetryConnection,
+  TelemetryFrame,
+  TelemetrySignalKey,
+} from "@/types/telemetry";
 
 const SERIES_COLOR = "#1f3860";
 const AXIS_COLOR = "#6b778c";
@@ -26,30 +35,41 @@ function niceScale(values: number[], baseline: number) {
   return { domain: [lo, hi] as [number, number], ticks };
 }
 
-function ChannelChart({ channel, readings }: { channel: SensorChannel; readings: SensorReading[] }) {
-  const latest = readings.at(-1);
-  const aboveBaseline = latest !== undefined && latest.value > channel.baseline;
+function ChannelChart({
+  signal,
+  frames,
+  assessment,
+}: {
+  signal: TelemetrySignalKey;
+  frames: TelemetryFrame[];
+  assessment: SignalAssessment;
+}) {
+  const def = TELEMETRY_SIGNALS[signal];
+  const data = useMemo<SensorReading[]>(
+    () => frames.map((f) => ({ signal, timestamp: f.timestamp, value: f[signal] })),
+    [frames, signal],
+  );
   const { domain, ticks } = niceScale(
-    readings.map((r) => r.value),
-    channel.baseline,
+    data.map((d) => d.value),
+    def.baseline,
   );
 
   return (
     <figure className="rounded border border-line p-3">
       <figcaption className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-sm font-semibold text-ink">{channel.label}</div>
+          <div className="text-sm font-semibold text-ink">{def.label}</div>
           <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-3">
             <svg width="16" height="2" aria-hidden>
               <line x1="0" y1="1" x2="16" y2="1" stroke={AXIS_COLOR} strokeDasharray="3 2" />
             </svg>
-            Demo baseline {channel.baseline} {channel.unit}
+            Demo baseline {def.baseline} {def.unit}
           </div>
         </div>
         <div className="text-right">
           <div className="font-mono text-lg font-semibold leading-none tabular text-ink">
-            {latest?.value ?? "—"}
-            <span className="ml-1 text-xs font-normal text-ink-3">{channel.unit}</span>
+            {assessment.latest.toFixed(def.decimals)}
+            <span className="ml-1 text-xs font-normal text-ink-3">{def.unit}</span>
           </div>
           <div className="mt-1 text-[10px] uppercase tracking-wide text-ink-3">Latest</div>
         </div>
@@ -57,15 +77,15 @@ function ChannelChart({ channel, readings }: { channel: SensorChannel; readings:
 
       <div className="mt-2 h-40">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={readings} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+          <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
             <CartesianGrid stroke={GRID_COLOR} vertical={false} />
             <XAxis
               dataKey="timestamp"
-              tickFormatter={formatShortDate}
+              tickFormatter={formatTime}
               tick={{ fontSize: 10, fill: AXIS_COLOR }}
               tickLine={false}
               axisLine={{ stroke: GRID_COLOR }}
-              minTickGap={24}
+              minTickGap={40}
             />
             <YAxis
               domain={domain}
@@ -75,10 +95,10 @@ function ChannelChart({ channel, readings }: { channel: SensorChannel; readings:
               axisLine={false}
               width={44}
             />
-            <ReferenceLine y={channel.baseline} stroke={AXIS_COLOR} strokeDasharray="4 4" />
+            <ReferenceLine y={def.baseline} stroke={AXIS_COLOR} strokeDasharray="4 4" />
             <Tooltip
-              formatter={(value) => [`${value} ${channel.unit}`, channel.label]}
-              labelFormatter={(label) => formatShortDate(String(label))}
+              formatter={(value) => [`${value} ${def.unit}`, def.label]}
+              labelFormatter={(label) => formatTime(String(label))}
               contentStyle={{ fontSize: 12, borderRadius: 4, borderColor: "#dde2ea" }}
               cursor={{ stroke: AXIS_COLOR, strokeWidth: 1 }}
             />
@@ -96,19 +116,15 @@ function ChannelChart({ channel, readings }: { channel: SensorChannel; readings:
       </div>
 
       <div className="mt-2 flex items-center gap-2 border-t border-line pt-2 text-xs">
-        {aboveBaseline ? (
+        {assessment.detection ? (
           <>
             <EvidenceBadge level="detected" />
-            <span className="text-ink-2">
-              Latest reading above demo baseline ({channel.baseline} {channel.unit}).
-            </span>
+            <span className="text-ink-2">{assessment.detection}.</span>
           </>
         ) : (
           <>
             <EvidenceBadge level="observed" />
-            <span className="text-ink-2">
-              Within demo baseline ({channel.baseline} {channel.unit}).
-            </span>
+            <span className="text-ink-2">Within demo limits.</span>
           </>
         )}
       </div>
@@ -116,30 +132,30 @@ function ChannelChart({ channel, readings }: { channel: SensorChannel; readings:
   );
 }
 
-function ChannelTable({ channels, readings }: { channels: SensorChannel[]; readings: SensorReading[] }) {
-  const dates = [...new Set(readings.map((r) => r.timestamp))].slice(-10).reverse();
-  const valueAt = (channelId: string, date: string) =>
-    readings.find((r) => r.channelId === channelId && r.timestamp === date)?.value ?? "—";
+function ChannelTable({ signals, frames }: { signals: TelemetrySignalKey[]; frames: TelemetryFrame[] }) {
+  const rows = frames.slice(-12).reverse();
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-ink-3">
-            <th className="py-2 pr-4 font-medium">Date</th>
-            {channels.map((c) => (
-              <th key={c.id} className="py-2 pr-4 text-right font-medium">
-                {c.label} ({c.unit})
+            <th className="py-2 pr-4 font-medium">Time (UTC)</th>
+            <th className="py-2 pr-4 text-right font-medium">Cycle</th>
+            {signals.map((k) => (
+              <th key={k} className="py-2 pr-4 text-right font-medium">
+                {TELEMETRY_SIGNALS[k].label} ({TELEMETRY_SIGNALS[k].unit})
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="font-mono tabular">
-          {dates.map((d) => (
-            <tr key={d} className="border-b border-line last:border-0">
-              <td className="py-1.5 pr-4 text-ink-2">{formatShortDate(d)}</td>
-              {channels.map((c) => (
-                <td key={c.id} className="py-1.5 pr-4 text-right text-ink">
-                  {valueAt(c.id, d)}
+          {rows.map((f) => (
+            <tr key={f.timestamp} className="border-b border-line last:border-0">
+              <td className="py-1.5 pr-4 text-ink-2">{formatTime(f.timestamp)}</td>
+              <td className="py-1.5 pr-4 text-right text-ink-2">{formatNumber(f.cycleCount)}</td>
+              {signals.map((k) => (
+                <td key={k} className="py-1.5 pr-4 text-right text-ink">
+                  {f[k].toFixed(TELEMETRY_SIGNALS[k].decimals)}
                 </td>
               ))}
             </tr>
@@ -150,35 +166,92 @@ function ChannelTable({ channels, readings }: { channels: SensorChannel[]; readi
   );
 }
 
-export function TelemetryPanel({
-  channels,
-  readings,
+/** Health-engine result for the selected scope: status, detections and counters. */
+function HealthEngineStrip({
+  assessment,
+  frames,
+  signals,
   scopeName,
+  scopeStatus,
 }: {
-  channels: SensorChannel[];
-  readings: SensorReading[];
+  assessment: HealthAssessment;
+  frames: TelemetryFrame[];
+  signals: TelemetrySignalKey[];
   scopeName: string;
+  scopeStatus: HealthStatus;
+}) {
+  const reasons = signals.flatMap((k) => (assessment.signals[k].detection ? [assessment.signals[k].detection!] : []));
+  return (
+    <div className="mb-4 grid gap-3 rounded border border-line bg-canvas/60 p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+            Telemetry context · {scopeName}
+          </span>
+          <StatusBadge status={scopeStatus} size="sm" />
+        </div>
+        {signals.length === 0 ? (
+          <p className="mt-1.5 text-sm text-ink-2">No monitored signals for this level.</p>
+        ) : reasons.length === 0 ? (
+          <p className="mt-1.5 text-sm text-ink-2">
+            {signals.length} signal{signals.length === 1 ? "" : "s"} within demo limits.
+          </p>
+        ) : (
+          <ul className="mt-1.5 space-y-0.5 text-sm text-ink-2">
+            {reasons.map((r) => (
+              <li key={r} className="flex gap-2">
+                <EvidenceBadge level="detected" />
+                <span className="min-w-0">{r}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-1 self-start text-right sm:grid-cols-1">
+        <div>
+          <dt className="text-[10px] uppercase tracking-wide text-ink-3">Cycle count</dt>
+          <dd className="font-mono text-lg font-semibold tabular text-ink">
+            {formatNumber(assessment.latest.cycleCount)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[10px] uppercase tracking-wide text-ink-3">Last reading (UTC)</dt>
+          <dd className="font-mono text-sm tabular text-ink-2">
+            {formatTime(assessment.latest.timestamp)} · {frames.length} samples
+          </dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+export function TelemetryPanel({
+  signals,
+  frames,
+  assessment,
+  connection,
+  scopeName,
+  scopeStatus,
+}: {
+  signals: TelemetrySignalKey[];
+  frames: TelemetryFrame[];
+  assessment: HealthAssessment | null;
+  connection: TelemetryConnection;
+  scopeName: string;
+  scopeStatus: HealthStatus;
 }) {
   const [view, setView] = useState<"chart" | "table">("chart");
 
-  if (channels.length === 0) {
-    return (
-      <EmptyState title={`No condition channels mapped to ${scopeName}`}>
-        Select the asset, gearbox or carriage to see mapped demo sensor channels.
-      </EmptyState>
-    );
+  if (!assessment) {
+    return <EmptyState title="No telemetry available">No telemetry source is configured for this asset.</EmptyState>;
   }
-
-  const readingsFor = (id: string) => readings.filter((r) => r.channelId === id);
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs text-ink-3">
-          <DemoBadge label="Demo telemetry" />
-          <span>
-            {channels.length} channel{channels.length === 1 ? "" : "s"} for {scopeName} · synthetic data, last 30 days
-          </span>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
+          <LiveDataBadge connection={connection} />
+          <span>Synthetic readings from the telemetry simulator · not measured sensor data</span>
         </div>
         <div className="flex rounded border border-line p-0.5 text-xs">
           {(["chart", "table"] as const).map((v) => (
@@ -197,14 +270,27 @@ export function TelemetryPanel({
         </div>
       </div>
 
-      {view === "chart" ? (
+      <HealthEngineStrip
+        assessment={assessment}
+        frames={frames}
+        signals={signals}
+        scopeName={scopeName}
+        scopeStatus={scopeStatus}
+      />
+
+      {signals.length === 0 ? (
+        <EmptyState title={`No condition monitoring on ${scopeName}`}>
+          Demo telemetry covers the gearbox, its bearing and the carriage drive. Select one of those, or the whole
+          asset, to see live signals.
+        </EmptyState>
+      ) : view === "chart" ? (
         <div className="grid gap-3 lg:grid-cols-2">
-          {channels.map((c) => (
-            <ChannelChart key={c.id} channel={c} readings={readingsFor(c.id)} />
+          {signals.map((k) => (
+            <ChannelChart key={k} signal={k} frames={frames} assessment={assessment.signals[k]} />
           ))}
         </div>
       ) : (
-        <ChannelTable channels={channels} readings={readings} />
+        <ChannelTable signals={signals} frames={frames} />
       )}
     </div>
   );

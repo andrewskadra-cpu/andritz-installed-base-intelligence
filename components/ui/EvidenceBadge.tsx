@@ -1,7 +1,7 @@
 import { Eye, Lightbulb, Radar, ShieldCheck, ShieldQuestion, type LucideIcon } from "lucide-react";
 import type { EvidenceLevel } from "@/types/installed-base";
 
-export const EVIDENCE_META: Record<
+const EVIDENCE_META: Record<
   EvidenceLevel,
   { label: string; icon: LucideIcon; hint: string; className: string }
 > = {

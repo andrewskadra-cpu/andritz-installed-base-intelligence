@@ -1,8 +1,11 @@
 /**
  * Installed-base domain types.
  *
- * Records reference their parent by id (customerId, plantId, ...) so they map
- * directly onto relational tables when the demo dataset is replaced by Supabase.
+ * Stored records reference their parent by id so they map directly onto
+ * relational tables when the demo dataset is replaced by Supabase. Health
+ * status, last-service dates and running hours are NOT stored on equipment
+ * records — they are derived (see lib/asset-model.ts) from service events and
+ * telemetry, so there is one source of truth for each fact.
  */
 
 export type HealthStatus = "healthy" | "attention" | "critical" | "unknown";
@@ -13,10 +16,10 @@ export type HealthStatus = "healthy" | "attention" | "critical" | "unknown";
  */
 export type EvidenceLevel = "observed" | "detected" | "inferred" | "confirmed";
 
-/** Levels of the equipment hierarchy that can be selected on the asset page. */
-export type HierarchyLevel = "asset" | "assembly" | "component";
-
-/** Regions of the placeholder equipment visualization that can be highlighted. */
+/**
+ * Physical region of an asset. Keys the equipment viewer geometry and the
+ * health engine's monitored regions.
+ */
 export type ViewerZone =
   | "carriage"
   | "gearbox"
@@ -51,16 +54,7 @@ export interface PlantUnit {
   description: string;
 }
 
-/** Operating counters shared by assets, assemblies and components. */
-export interface OperatingRecord {
-  status: HealthStatus;
-  operatingHours: number | null;
-  cycles: number | null;
-  lastService: string | null;
-  lastReplacement: string | null;
-}
-
-export interface Asset extends OperatingRecord {
+export interface Asset {
   id: string;
   unitId: string;
   /** Equipment model, e.g. "IK-700". */
@@ -71,21 +65,97 @@ export interface Asset extends OperatingRecord {
   productLine: string;
   installedPosition: string;
   installedDate: string;
+  /** Operating hours as of the latest record. */
+  operatingHours: number;
+  /** Cycle count as of the latest record; live telemetry continues from here. */
+  recordedCycles: number;
 }
 
-export interface Assembly extends OperatingRecord {
+export type EntityType = "assembly" | "component";
+
+/**
+ * Any sub-asset equipment node. Nodes form a tree of arbitrary depth through
+ * `parentId`, which is either the asset id (top level) or another entity id.
+ */
+export interface AssetEntity {
   id: string;
   assetId: string;
+  parentId: string;
+  type: EntityType;
   name: string;
-  viewerZone: ViewerZone;
+  /** Fictional demo part identifier, when the node is a purchasable part. */
+  partNumber: string | null;
+  /** Physical region in the viewer / health engine, if the node has one. */
+  zone: ViewerZone | null;
+  /**
+   * Status from the latest inspection record. Live telemetry overrides this
+   * for monitored regions. "unknown" means no recent inspection on record.
+   */
+  recordedStatus: HealthStatus;
 }
 
-export interface Component extends OperatingRecord {
+export type ServiceEventType = "inspection" | "repair" | "replacement" | "lubrication" | "commissioning";
+
+export interface ServiceEvent {
   id: string;
-  assemblyId: string;
-  name: string;
+  assetId: string;
+  /** Asset id or entity id the work was performed on. */
+  entityId: string;
+  date: string;
+  type: ServiceEventType;
+  description: string;
+  performedBy: string;
+  workOrder: string;
+  /** Asset operating hours / cycles when the event took place. */
+  assetOperatingHours: number;
+  assetCycles: number;
+}
+
+export type DocumentKind = "drawing" | "pi_sheet" | "procedure" | "bom";
+
+export interface DocumentRecord {
+  id: string;
+  assetId: string;
+  /** Asset id or entity id the document describes. */
+  entityId: string;
+  kind: DocumentKind;
+  title: string;
+  documentNumber: string;
+  revision: string;
+  updated: string;
+}
+
+/** One line of a node's bill of materials. */
+export interface PartRecord {
+  id: string;
+  assetId: string;
+  /** Asset id or entity id whose BOM this line belongs to. */
+  entityId: string;
+  /** Item number as it appears on the related PI sheet. */
+  itemNumber: number;
   partNumber: string;
-  viewerZone: ViewerZone;
+  description: string;
+  quantity: number;
+  /** When the line is itself a node in the hierarchy (e.g. an assembly). */
+  linkedEntityId: string | null;
+}
+
+/** One reading of one signal, as plotted. */
+export interface SensorReading {
+  signal: string;
+  timestamp: string;
+  value: number;
+}
+
+/** An open condition on some node, with its evidence chain. */
+export interface ActiveCondition {
+  id: string;
+  assetId: string;
+  entityId: string;
+  title: string;
+  status: HealthStatus;
+  technicianConfirmed: boolean;
+  evidence: ConditionEvidence[];
 }
 
 export interface ConditionEvidence {
@@ -95,108 +165,28 @@ export interface ConditionEvidence {
   recordedAt: string | null;
 }
 
-/** An open condition on some node of the hierarchy, with its evidence chain. */
-export interface ActiveCondition {
-  id: string;
-  assetId: string;
-  targetLevel: HierarchyLevel;
-  targetId: string;
-  title: string;
-  status: HealthStatus;
-  technicianConfirmed: boolean;
-  evidence: ConditionEvidence[];
-}
-
 export interface InspectionRecommendation {
   id: string;
   assetId: string;
-  targetId: string;
+  entityId: string;
   priority: "routine" | "planned" | "prompt";
   action: string;
   rationale: string;
 }
 
-export type SensorChannelKey =
-  | "vibration"
-  | "gearbox_temperature"
-  | "motor_current"
-  | "travel_time";
-
-export interface SensorChannel {
-  id: string;
-  assetId: string;
-  key: SensorChannelKey;
-  label: string;
-  unit: string;
-  /** Demo baseline used for "detected" comparisons. Not an engineering limit. */
-  baseline: number;
-  /** Hierarchy nodes this channel is relevant to. */
-  targetIds: string[];
-}
-
-export interface SensorReading {
-  channelId: string;
-  timestamp: string;
-  value: number;
-}
-
-export interface ServiceEvent {
-  id: string;
-  assetId: string;
-  targetId: string;
-  date: string;
-  type: "inspection" | "repair" | "replacement" | "lubrication" | "commissioning";
-  summary: string;
-  performedBy: string;
-  workOrder: string;
-}
-
-export interface DocumentRecord {
-  id: string;
-  assetId: string;
-  targetIds: string[];
-  kind: "drawing" | "pi_sheet";
-  title: string;
-  documentNumber: string;
-  revision: string;
-  updated: string;
-}
-
-export interface PartRecord {
-  id: string;
-  assetId: string;
-  targetId: string;
-  partNumber: string;
-  description: string;
-  quantity: number;
-  /** Item number as it appears on the related PI sheet. */
-  itemNumber: number;
-}
-
-/** Everything the asset intelligence page needs, resolved in one query. */
-export interface AssetContext {
+/** Stored records for one asset, resolved in one query. */
+export interface AssetRecords {
   customer: Customer;
   plant: Plant;
   unit: PlantUnit;
   asset: Asset;
-  assemblies: Assembly[];
-  components: Component[];
-  conditions: ActiveCondition[];
-  recommendations: InspectionRecommendation[];
-  sensorChannels: SensorChannel[];
-  sensorReadings: SensorReading[];
+  entities: AssetEntity[];
   serviceEvents: ServiceEvent[];
   documents: DocumentRecord[];
   parts: PartRecord[];
 }
 
-export type SearchResultKind =
-  | "customer"
-  | "plant"
-  | "unit"
-  | "asset"
-  | "assembly"
-  | "component";
+export type SearchResultKind = "customer" | "plant" | "unit" | "asset" | "assembly" | "component";
 
 export interface SearchEntry {
   id: string;

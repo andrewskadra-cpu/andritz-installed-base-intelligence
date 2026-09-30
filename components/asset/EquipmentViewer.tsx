@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Box, Info, RotateCcw } from "lucide-react";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { STATUS_META, STATUS_ORDER, viewerColor } from "@/components/ui/status";
-import type { SelectedNode } from "@/lib/asset-selection";
-import type { Assembly, Component, ViewerZone } from "@/types/installed-base";
+import type { AssetModel } from "@/lib/asset-model";
+import type { Selection } from "@/lib/asset-selection";
 import type { SceneZone } from "./EquipmentScene";
 
 const EquipmentScene = dynamic(() => import("./EquipmentScene"), {
@@ -16,55 +17,50 @@ const EquipmentScene = dynamic(() => import("./EquipmentScene"), {
 });
 
 export function EquipmentViewer({
-  assemblies,
-  components,
+  model,
   selection,
   onSelect,
 }: {
-  assemblies: Assembly[];
-  components: Component[];
-  selection: SelectedNode;
-  onSelect: (nodeId: string) => void;
+  model: AssetModel;
+  selection: Selection;
+  onSelect: (id: string) => void;
 }) {
   const [resetSignal, setResetSignal] = useState(0);
 
-  // One clickable zone per assembly, plus components that have their own zone.
-  const zones = useMemo<SceneZone[]>(() => {
-    const result: SceneZone[] = assemblies.map((a) => ({
-      zone: a.viewerZone,
-      nodeId: a.id,
-      label: a.name,
-      status: a.status,
-    }));
-    for (const c of components) {
-      if (!result.some((z) => z.zone === c.viewerZone)) {
-        result.push({ zone: c.viewerZone, nodeId: c.id, label: c.name, status: c.status });
-      }
-    }
-    return result;
-  }, [assemblies, components]);
+  // One clickable region per node that owns geometry, coloured by its rolled-up status.
+  const zones = useMemo<SceneZone[]>(
+    () =>
+      Object.values(model.nodes).flatMap((n) =>
+        n.zone ? [{ zone: n.zone, nodeId: n.id, label: n.name, status: n.status }] : [],
+      ),
+    [model.nodes],
+  );
 
-  const focus = useMemo<Set<ViewerZone> | null>(() => {
-    if (selection.level === "asset" || !selection.zone) return null;
-    const set = new Set<ViewerZone>([selection.zone]);
-    if (selection.level === "assembly") {
-      for (const c of components) {
-        if (c.assemblyId === selection.id) set.add(c.viewerZone);
-      }
-    }
-    return set;
-  }, [selection, components]);
+  const { node, path } = selection;
+  const parent = path.length > 1 ? path[path.length - 2] : null;
 
   return (
     <div className="relative h-[420px] overflow-hidden rounded-md border border-line bg-[#f6f7f9] xl:h-[480px]">
-      <EquipmentScene zones={zones} focus={focus} onSelect={onSelect} resetSignal={resetSignal} />
+      <EquipmentScene
+        zones={zones}
+        focus={selection.focusZones}
+        context={selection.contextZones}
+        onSelect={onSelect}
+        resetSignal={resetSignal}
+      />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
         <div className="pointer-events-auto rounded border border-line bg-panel/95 px-3 py-2 shadow-sm">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-3">
-            <Box size={12} aria-hidden /> Equipment view
+            <Box size={12} aria-hidden /> {node.type === "asset" ? "Whole equipment" : `Focused ${node.type}`}
           </div>
-          <div className="text-sm font-semibold text-ink">{selection.name}</div>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-sm font-semibold text-ink">{node.name}</span>
+            <StatusBadge status={node.status} size="sm" />
+          </div>
+          {parent && parent.type !== "asset" && (
+            <div className="mt-0.5 text-[11px] text-ink-3">within {parent.name}</div>
+          )}
         </div>
         <button
           type="button"

@@ -36,19 +36,19 @@ export default async function HomePage() {
           <section>
             <SectionLabel>Equipment needing review</SectionLabel>
             <ul className="mt-3 divide-y divide-line overflow-hidden rounded-md border border-line bg-panel">
-              {watchlist.map((asset) => (
+              {watchlist.map(({ asset, status, topConcern }) => (
                 <li key={asset.id}>
                   <Link
                     href={`/assets/${asset.id}`}
-                    className={`flex items-center gap-3 border-l-4 px-4 py-3 hover:bg-canvas ${STATUS_META[asset.status].accent}`}
+                    className={`flex items-center gap-3 border-l-4 px-4 py-3 hover:bg-canvas ${STATUS_META[status].accent}`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-ink">{asset.name}</div>
                       <div className="truncate text-xs text-ink-3">
-                        {asset.equipmentType} · {asset.installedPosition}
+                        {topConcern ? `${topConcern.condition.title} · ${topConcern.nodeName}` : asset.equipmentType}
                       </div>
                     </div>
-                    <StatusBadge status={asset.status} size="sm" />
+                    <StatusBadge status={status} size="sm" />
                     <ChevronRight size={16} className="text-ink-3" aria-hidden />
                   </Link>
                 </li>

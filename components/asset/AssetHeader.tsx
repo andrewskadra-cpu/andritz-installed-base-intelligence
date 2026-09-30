@@ -2,9 +2,10 @@ import { DemoBadge } from "@/components/ui/DemoBadge";
 import { KeyValue } from "@/components/ui/KeyValue";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate } from "@/lib/format";
-import type { Asset, Plant, PlantUnit } from "@/types/installed-base";
+import type { AssetModel } from "@/lib/asset-model";
 
-export function AssetHeader({ asset, unit, plant }: { asset: Asset; unit: PlantUnit; plant: Plant }) {
+export function AssetHeader({ model }: { model: AssetModel }) {
+  const { asset, unit, plant } = model.records;
   return (
     <div className="border-b border-line bg-panel px-4 py-4 lg:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -14,7 +15,7 @@ export function AssetHeader({ asset, unit, plant }: { asset: Asset; unit: PlantU
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-ink">{asset.name}</h1>
-            <StatusBadge status={asset.status} size="lg" />
+            <StatusBadge status={model.nodes[model.rootId].status} size="lg" />
           </div>
         </div>
         <DemoBadge />

@@ -8,10 +8,9 @@ export function formatDate(iso: string | null): string {
   return `${d} ${MONTHS[m - 1]} ${y}`;
 }
 
-/** "2026-03-18" → "18 Mar". */
-export function formatShortDate(iso: string): string {
-  const [, m, d] = iso.slice(0, 10).split("-").map(Number);
-  return `${d} ${MONTHS[m - 1]}`;
+/** ISO timestamp → "HH:MM:SS" in UTC, so server and client render identical text. */
+export function formatTime(iso: string): string {
+  return iso.slice(11, 19);
 }
 
 export function formatNumber(value: number | null): string {
