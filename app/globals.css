@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  /* Navigation */
+  --color-navy-950: #0a1426;
+  --color-navy-900: #0e1c34;
+  --color-navy-800: #152847;
+  --color-navy-700: #1f3860;
+  --color-navy-300: #9fb0cb;
+
+  /* Working surfaces */
+  --color-canvas: #f2f4f7;
+  --color-panel: #ffffff;
+  --color-line: #dde2ea;
+  --color-line-strong: #c5cdd9;
+  --color-ink: #0f1a2b;
+  --color-ink-2: #44526a;
+  --color-ink-3: #6b778c;
+
+  /* Status — reserved for health state, always paired with icon + label */
+  --color-critical: #c0262d;
+  --color-critical-soft: #fbeaea;
+  --color-attention: #b26b00;
+  --color-attention-soft: #fdf3e1;
+  --color-healthy: #217a4b;
+  --color-healthy-soft: #e6f4ec;
+  --color-info: #1f5fbf;
+  --color-info-soft: #e8f0fb;
+  --color-unknown: #6b778c;
+  --color-unknown-soft: #eef0f4;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

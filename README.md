@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ANDRITZ Installed-Base Intelligence
 
-## Getting Started
+Frontend prototype for exploring installed equipment from customer down to component:
 
-First, run the development server:
+Customer → Plant → Unit → Asset → Assembly → Component
+
+> **All data is fictional demo data.** No real customer, plant, failure statistic or equipment specification is included.
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Routes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Screen |
+| --- | --- |
+| `/` | Installed-base search |
+| `/customers/[customerId]` | Customer overview |
+| `/plants/[plantId]` | Plant overview with units and equipment status |
+| `/assets/[assetId]?node=<id>` | Asset intelligence; `node` selects an assembly or component |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Demo entry point: `/assets/ik700-10482?node=ik700-10482-bearing-b204`
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                  App Router pages (root-level, no src/)
+components/layout     AppSidebar, TopBar, Breadcrumbs
+components/search     InstalledBaseSearch
+components/customer   CustomerCard
+components/plant      PlantHeader, PlantHealthSummary, AssetList
+components/asset      Asset screen: header, hierarchy, 3D viewer, intelligence, tabs
+components/ui         Status/evidence badges, panels, tabs and other primitives
+data/demo-data.ts     Demo dataset (the only place equipment values live)
+lib/installed-base.ts Async query layer — swap its internals for Supabase
+lib/asset-selection.ts Resolves the selected hierarchy node and scopes data to it
+types/installed-base.ts Domain types
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Evidence levels
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Condition statements are always labelled by certainty:
 
-## Deploy on Vercel
+- **Observed**: a raw measured value.
+- **Detected**: a rule or baseline comparison.
+- **Inferred**: a hypothesis for inspection planning, not a diagnosis.
+- **Confirmed**: technician-verified only. Unconfirmed items render greyed out.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 3D viewer
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`components/asset/EquipmentScene.tsx` draws a placeholder sootblower from primitive geometry, with selectable zones keyed by `ViewerZone`. It is not an engineering model. Replace it with a GLB per equipment model later and keep the same zone keys.
