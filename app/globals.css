@@ -49,3 +49,9 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Interactive PI: selected callout ring */
+@keyframes pi-pulse {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(1.18); }
+}

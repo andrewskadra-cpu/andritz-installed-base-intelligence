@@ -48,6 +48,9 @@ reference/
 tools/cad/ik700-model-map.json
 tools/cad/*.glb
 
+# Internal interactive PI drawing assets (sheet images + callout manifests)
+public/pi/
+
 # Internal 3D models
 public/models/*.glb
 tools/cad/*.glb

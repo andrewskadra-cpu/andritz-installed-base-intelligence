@@ -8,6 +8,8 @@
  * queries and this file can be deleted.
  */
 
+import { PI_COMPONENT_MAP } from "@/lib/pi/pi-component-map";
+import { PI_FORMS } from "@/lib/pi/pi-registry";
 import type {
   Asset,
   AssetEntity,
@@ -147,10 +149,12 @@ const entityTemplate: EntityTemplate[] = [
   { key: "motor", parent: "carriage", type: "component", name: "Drive Motor", partNumber: null, zone: null },
 ];
 
-/** Engineering references for mapped components (from the approved model mapping). */
-const ENGINEERING_REFERENCES: Record<string, EngineeringReference> = {
-  "worm-thrust-bearing-a": { document: "PI 4066", item: "36" },
-};
+/** Item-level engineering references, derived from the central PI component map. */
+const ENGINEERING_REFERENCES: Record<string, EngineeringReference> = Object.fromEntries(
+  Object.entries(PI_COMPONENT_MAP)
+    .filter(([, ref]) => ref.item !== null)
+    .map(([key, ref]) => [key, { document: PI_FORMS[ref.form].label, item: ref.item! }]),
+);
 
 /** Model-derived components have no inspection record in the demo data: status unknown. */
 const MODEL_DERIVED = new Set([

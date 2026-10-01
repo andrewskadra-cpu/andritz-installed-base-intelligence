@@ -95,3 +95,12 @@ Components never generate values and never compare against thresholds. The healt
 ## 3D viewer
 
 `components/asset/EquipmentScene.tsx` draws a placeholder sootblower from primitive geometry, with selectable zones keyed by `ViewerZone`. It is not an engineering model. Replace it with a GLB per equipment model later and keep the same zone keys.
+
+## Interactive PI (local engineering assets)
+
+The Interactive PI tab renders PI (part identification) sheets with selectable callouts. Code lives in `components/pi/` and `lib/pi/`; component-to-item mappings are only in `lib/pi/pi-component-map.ts`.
+
+> **PI engineering assets are local internal prototype assets and must not be included in a public deployment without approval.**
+> Sheet images and manifests live in `public/pi/<form>/` (gitignored). Anything under `public/` is served by the Next.js app, so exclude `public/pi/` from any deployment that has not been approved. Without the assets, the tab shows "Interactive drawing asset not available in this environment."
+
+Manifest (`public/pi/pi-4066/manifest.json`): `sheets` (`id`, `label`, `image`, `width`, `height` in px) and `items` (`item`, optional `name`, `partNumber`, `quantity`, `notes`, and `callouts` with `sheet`, `x`, `y`, `r`). With `"coordinates": "normalized"`, `x`/`y` are fractions of sheet width/height and `r` a fraction of width. Missing source values are omitted, never filled in.

@@ -3,11 +3,14 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Activity, FileText, History, Package, ScanSearch } from "lucide-react";
+import { InteractivePIViewer } from "@/components/pi/InteractivePIViewer";
 import { TopBar } from "@/components/layout/TopBar";
 import type { BreadcrumbItem } from "@/components/layout/Breadcrumbs";
 import { Panel } from "@/components/ui/Panel";
 import { Tabs } from "@/components/ui/Tabs";
+import { entityKey } from "@/lib/3d/ik700-model-map";
 import { buildAssetModel } from "@/lib/asset-model";
+import { piReferenceFor } from "@/lib/pi/pi-component-map";
 import {
   resolveSelection,
   scopeConditions,
@@ -77,6 +80,8 @@ export function AssetWorkspace({
   const scopeName = selection.node.name;
   const drawings = scopeDocuments(model, selection, ["drawing", "procedure"]);
   const piSheets = scopeDocuments(model, selection, ["pi_sheet"]);
+  // Only exact component mappings open the interactive PI (no inheritance from parents).
+  const piReference = piReferenceFor(entityKey(model.rootId, selection.node.id));
   const bom = scopeParts(model, selection);
   // Only cite a BOM document filed against the node that owns the BOM lines shown.
   const bomOwnerId = bom.inheritedFrom?.id ?? selection.node.id;
@@ -148,13 +153,19 @@ export function AssetWorkspace({
                 id: "pi",
                 label: "Interactive PI",
                 icon: ScanSearch,
-                content: (
+                content: piReference ? (
+                  <InteractivePIViewer
+                    reference={piReference}
+                    model={model}
+                    selectedEntityId={selection.node.id}
+                    onSelectEntity={select}
+                  />
+                ) : (
                   <DocumentPanel
                     key={`pi-${selection.node.id}`}
                     documents={piSheets.items}
                     inheritedFrom={piSheets.inheritedFrom}
                     parts={bom.items}
-                    engineeringReference={selection.node.sourceReference}
                     scopeName={scopeName}
                     emptyLabel="PI sheets"
                     onSelect={select}
