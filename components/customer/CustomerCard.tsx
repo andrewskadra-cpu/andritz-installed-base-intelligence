@@ -18,11 +18,11 @@ export function CustomerCard({
   return (
     <Link
       href={`/customers/${customer.id}`}
-      className="group block rounded-md border border-line bg-panel p-4 transition-colors hover:border-navy-700/40 hover:shadow-sm"
+      className="group block rounded-md border border-line bg-panel p-4 transition-colors hover:border-accent/40 hover:shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded bg-navy-900 text-white">
+          <span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent-soft text-accent ring-1 ring-inset ring-accent/30">
             <Building2 size={18} aria-hidden />
           </span>
           <div className="min-w-0">
@@ -37,11 +37,11 @@ export function CustomerCard({
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>
-          <dt className="text-[11px] uppercase tracking-[0.06em] text-ink-3">Plants</dt>
+          <dt className="text-2xs uppercase tracking-[0.06em] text-ink-3">Plants</dt>
           <dd className="font-mono text-lg font-semibold tabular text-ink">{plantCount}</dd>
         </div>
         <div>
-          <dt className="text-[11px] uppercase tracking-[0.06em] text-ink-3">Tracked assets</dt>
+          <dt className="text-2xs uppercase tracking-[0.06em] text-ink-3">Tracked assets</dt>
           <dd className="font-mono text-lg font-semibold tabular text-ink">{assetCount}</dd>
         </div>
       </dl>
@@ -50,7 +50,7 @@ export function CustomerCard({
         <HealthBar summary={health} />
       </div>
 
-      <div className="mt-4 flex items-center gap-1 text-xs font-medium text-navy-700 group-hover:underline">
+      <div className="mt-4 flex items-center gap-1 text-xs font-medium text-accent group-hover:underline">
         Open customer <ArrowRight size={13} aria-hidden />
       </div>
     </Link>

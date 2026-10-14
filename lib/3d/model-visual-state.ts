@@ -39,9 +39,9 @@ const TINT_COLOR = Object.fromEntries(
 
 /** Selection pulse: one smooth cosine cycle; never fades the geometry itself. */
 export const SELECT_PULSE_PERIOD = 1.4;            // Seconds per cycle.
-const SELECT_EMISSIVE_RANGE: [number, number] = [0.14, 0.46];
+const SELECT_EMISSIVE_RANGE: [number, number] = [0.22, 0.62];
 const SELECT_OUTLINE_RANGE: [number, number] = [0.5, 1];
-const SELECT_STATIC_EMISSIVE = 0.38;               // Reduced-motion / initial state.
+const SELECT_STATIC_EMISSIVE = 0.48;               // Reduced-motion / initial state.
 
 /**
  * Update the selection highlight for this frame. Only touches the selected
@@ -65,6 +65,9 @@ export function applySelectionPulse(
   }
   edges.setOpacity(SELECT_OUTLINE_RANGE[0] + (SELECT_OUTLINE_RANGE[1] - SELECT_OUTLINE_RANGE[0]) * w);
 }
+
+/** The selected part keeps a quieter health tint so the blue selection reads clearly on it. */
+const SELECTED_TINT_FACTOR = 0.4;
 
 /** Opacity below which a mesh is not clickable (clicks pass through to what is behind). */
 export const PICKABLE_OPACITY = 0.3;
@@ -159,7 +162,7 @@ export function computeVisualPlan(index: ModelIndex, inputs: VisualInputs): Map<
       visible,
       opacity,
       tint,
-      tintStrength,
+      tintStrength: selected ? tintStrength * SELECTED_TINT_FACTOR : tintStrength,
       selected,
       hovered: hoveredObject !== null && lineage.includes(hoveredObject),
       pickable: visible && opacity >= PICKABLE_OPACITY,
@@ -204,7 +207,8 @@ export function applyVisualPlan(index: ModelIndex, plan: Map<THREE.Mesh, MeshVis
 export class SelectionEdges {
   private edgeCache = new WeakMap<THREE.BufferGeometry, THREE.EdgesGeometry>();
   private lines = new Map<THREE.Mesh, THREE.LineSegments>();
-  private material = new THREE.LineBasicMaterial({ color: SELECT_COLOR, transparent: true, opacity: 1 });
+  // Drawn on top of everything so the selected part stays visible inside faded housings.
+  private material = new THREE.LineBasicMaterial({ color: SELECT_COLOR, transparent: true, opacity: 1, depthTest: false });
 
   setOpacity(opacity: number) {
     this.material.opacity = opacity;
@@ -227,6 +231,7 @@ export class SelectionEdges {
       }
       const line = new THREE.LineSegments(edges, this.material);
       line.raycast = () => {};                 // Outlines are never click targets.
+      line.renderOrder = 10;
       mesh.add(line);
       this.lines.set(mesh, line);
     }

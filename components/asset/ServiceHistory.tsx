@@ -33,7 +33,7 @@ export function ServiceHistory({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-ink-3">
+            <tr className="border-b border-line text-left text-2xs uppercase tracking-wide text-ink-3">
               <th className="py-2 pr-4 font-medium">Date</th>
               <th className="py-2 pr-4 font-medium">Level</th>
               <th className="py-2 pr-4 font-medium">Event</th>
@@ -49,7 +49,7 @@ export function ServiceHistory({
                 <tr key={e.id} className="border-b border-line align-top last:border-0">
                   <td className="whitespace-nowrap py-2 pr-4 font-mono text-xs tabular text-ink-2">{formatDate(e.date)}</td>
                   <td className="py-2 pr-4">
-                    <div className="text-[11px] uppercase tracking-wide text-ink-3">{node ? LEVEL_LABEL[node.type] : ""}</div>
+                    <div className="text-2xs uppercase tracking-wide text-ink-3">{node ? LEVEL_LABEL[node.type] : ""}</div>
                     <div className="whitespace-nowrap text-ink">{node?.name}</div>
                   </td>
                   <td className="whitespace-nowrap py-2 pr-4 font-medium text-ink">{TYPE_LABEL[e.type]}</td>

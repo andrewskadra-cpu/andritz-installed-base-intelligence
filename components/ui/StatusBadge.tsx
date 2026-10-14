@@ -11,14 +11,14 @@ export function StatusBadge({
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   const sizing = {
-    sm: "gap-1 px-1.5 py-0.5 text-[11px]",
-    md: "gap-1.5 px-2 py-0.5 text-xs",
-    lg: "gap-2 px-3 py-1 text-sm",
+    sm: "gap-1 px-2 py-0.5 text-2xs",
+    md: "gap-1.5 px-2.5 py-0.5 text-2xs",
+    lg: "gap-2 px-3.5 py-1 text-xs",
   }[size];
   const iconSize = size === "lg" ? 16 : size === "md" ? 14 : 12;
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded border font-semibold uppercase tracking-wide ${meta.soft} ${sizing}`}
+      className={`inline-flex shrink-0 items-center rounded-full border font-semibold uppercase tracking-[0.08em] ${meta.soft} ${sizing}`}
     >
       <Icon size={iconSize} strokeWidth={2.25} aria-hidden />
       {meta.label}

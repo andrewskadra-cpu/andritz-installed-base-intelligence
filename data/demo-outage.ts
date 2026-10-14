@@ -1,5 +1,5 @@
 /**
- * DEMO DATA — planned outages and inspection checklist items used by the
+ * DEMO DATA: planned outages and inspection checklist items used by the
  * outage-scope generator. Fictional; not an ANDRITZ procedure.
  */
 

@@ -15,15 +15,17 @@ export function EquipmentViewer({
   model,
   selection,
   onSelect,
+  compact = false,
 }: {
   model: AssetModel;
   selection: Selection;
   onSelect: (id: string | null) => void;
+  compact?: boolean;
 }) {
   const placeholder = (
     <PlaceholderEquipmentViewer model={model} selection={selection} onSelect={(id) => onSelect(id)} />
   );
   const usesIK700Model = (IK700_MODEL.equipmentModels as readonly string[]).includes(model.records.asset.model);
   if (!usesIK700Model) return placeholder;
-  return <IK700Viewer model={model} selection={selection} onSelect={onSelect} fallback={placeholder} />;
+  return <IK700Viewer model={model} selection={selection} onSelect={onSelect} fallback={placeholder} compact={compact} />;
 }

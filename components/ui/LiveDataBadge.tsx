@@ -10,10 +10,10 @@ const STATE: Record<TelemetryConnection, { label: string; dot: string }> = {
 export function LiveDataBadge({ connection }: { connection: TelemetryConnection }) {
   const state = STATE[connection];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded border border-info/30 bg-info-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-info">
-      <span className={`size-1.5 rounded-full ${state.dot}`} aria-hidden />
+    <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-cyan/30 bg-cyan/10 px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-[0.1em] text-cyan">
+      <span className={`size-2 rounded-full ${state.dot}`} aria-hidden />
       Live demo data
-      <span className="font-medium normal-case tracking-normal text-info/80">· {state.label}</span>
+      <span className="font-medium normal-case tracking-normal text-ink-2">· {state.label}</span>
     </span>
   );
 }

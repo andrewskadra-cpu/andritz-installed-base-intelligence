@@ -40,7 +40,7 @@ export function PlaceholderEquipmentViewer({
   const parent = path.length > 1 ? path[path.length - 2] : null;
 
   return (
-    <div className="relative h-[420px] overflow-hidden rounded-md border border-line bg-[#f6f7f9] xl:h-[480px]">
+    <div className="relative h-full min-h-[180px] overflow-hidden rounded-lg border border-white/10 bg-[#f6f7f9] shadow-raised ring-1 ring-black/40">
       <EquipmentScene
         zones={zones}
         focus={selection.focusZones}
@@ -50,8 +50,8 @@ export function PlaceholderEquipmentViewer({
       />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
-        <div className="pointer-events-auto rounded border border-line bg-panel/95 px-3 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+        <div className="pointer-events-auto rounded-lg border border-white/10 bg-navy-900/90 px-3.5 py-2.5 shadow-raised backdrop-blur">
+          <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
             <Box size={12} aria-hidden /> {node.type === "asset" ? "Whole equipment" : `Focused ${node.type}`}
           </div>
           <div className="mt-0.5 flex items-center gap-2">
@@ -59,20 +59,20 @@ export function PlaceholderEquipmentViewer({
             <StatusBadge status={node.status} size="sm" />
           </div>
           {parent && parent.type !== "asset" && (
-            <div className="mt-0.5 text-[11px] text-ink-3">within {parent.name}</div>
+            <div className="mt-0.5 text-2xs text-ink-3">within {parent.name}</div>
           )}
         </div>
         <button
           type="button"
           onClick={() => setResetSignal((n) => n + 1)}
-          className="pointer-events-auto flex items-center gap-1.5 rounded border border-line bg-panel/95 px-2.5 py-1.5 text-xs font-medium text-ink-2 shadow-sm hover:text-ink"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-lg border border-white/10 bg-navy-900/90 px-3 py-1.5 text-xs font-medium text-ink-2 shadow-raised backdrop-blur hover:bg-navy-800 hover:text-ink"
         >
           <RotateCcw size={13} aria-hidden /> Reset view
         </button>
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-2 p-3">
-        <ul className="flex flex-wrap gap-x-3 gap-y-1 rounded border border-line bg-panel/95 px-3 py-1.5 text-[11px] text-ink-2 shadow-sm">
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 rounded-lg border border-white/10 bg-navy-900/90 px-3 py-2 text-2xs font-medium text-ink-2 shadow-raised backdrop-blur">
           {STATUS_ORDER.map((s) => (
             <li key={s} className="flex items-center gap-1.5">
               <span className="size-2.5 rounded-sm" style={{ background: viewerColor(s) }} />
@@ -80,7 +80,7 @@ export function PlaceholderEquipmentViewer({
             </li>
           ))}
         </ul>
-        <div className="flex items-center gap-1.5 rounded border border-line bg-panel/95 px-2.5 py-1.5 text-[11px] text-ink-3 shadow-sm">
+        <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-navy-900/90 px-3 py-2 text-2xs text-ink-2 shadow-raised backdrop-blur">
           <Info size={12} aria-hidden />
           Placeholder geometry · not to scale · click an area to drill down
         </div>

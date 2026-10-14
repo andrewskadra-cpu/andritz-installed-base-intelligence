@@ -38,16 +38,16 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[cu
 
   return (
     <>
-      <TopBar breadcrumbs={[{ label: "Installed base", href: "/" }, { label: customer.name }]} />
-      <div className="border-b border-line bg-panel px-4 py-5 lg:px-8">
+      <TopBar breadcrumbs={[{ label: "Installed Base", href: "/installed-base" }, { label: customer.name }]} />
+      <div className="page-band px-4 py-6 lg:px-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded bg-navy-900 text-white">
+            <span className="grid size-12 place-items-center rounded-md bg-accent-soft text-accent ring-1 ring-inset ring-accent/30">
               <Building2 size={20} aria-hidden />
             </span>
             <div>
               <div className="text-xs font-medium text-ink-3">Customer</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink">{customer.name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-ink">{customer.name}</h1>
             </div>
           </div>
           {customer.isDemo && <DemoBadge />}
@@ -82,7 +82,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[cu
                 className="group rounded-md border border-line bg-panel p-4 transition-shadow hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded bg-canvas text-ink-2">
+                  <span className="grid size-9 place-items-center rounded bg-raised text-ink-2">
                     <Factory size={18} aria-hidden />
                   </span>
                   <div className="min-w-0">
@@ -100,7 +100,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[cu
                 <div className="mt-4">
                   <HealthBar summary={health} />
                 </div>
-                <div className="mt-4 flex items-center gap-1 text-xs font-medium text-navy-700 group-hover:underline">
+                <div className="mt-4 flex items-center gap-1 text-xs font-medium text-accent group-hover:underline">
                   Open plant <ArrowRight size={13} aria-hidden />
                 </div>
               </Link>

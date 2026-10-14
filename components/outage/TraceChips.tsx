@@ -26,7 +26,7 @@ export function TraceChips({ trace }: { trace: TraceRef[] }) {
           </>
         );
         const className =
-          "inline-flex max-w-full items-center gap-1 rounded border border-line bg-canvas px-1.5 py-0.5 text-[11px] text-ink-2";
+          "inline-flex max-w-full items-center gap-1 rounded border border-line bg-raised px-1.5 py-0.5 text-2xs text-ink-2";
         return (
           <li key={`${t.kind}-${i}`} className="max-w-full" title={`${label}: ${t.label}`}>
             {t.href ? (

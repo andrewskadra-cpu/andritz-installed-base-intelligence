@@ -16,7 +16,7 @@ const KIND_LABEL: Record<DocumentKind, string> = {
 
 export function InheritedNotice({ from, scopeName, what }: { from: HierarchyNode; scopeName: string; what: string }) {
   return (
-    <p className="mb-3 flex items-center gap-1.5 rounded bg-canvas px-3 py-2 text-xs text-ink-2">
+    <p className="mb-3 flex items-center gap-1.5 rounded bg-raised px-3 py-2 text-xs text-ink-2">
       <CornerLeftUp size={13} className="shrink-0 text-ink-3" aria-hidden />
       No {what} filed against {scopeName}. Showing {what} from parent {from.name}.
     </p>
@@ -61,13 +61,13 @@ export function DocumentPanel({
                 onClick={() => setActiveId(doc.id)}
                 aria-pressed={doc.id === active.id}
                 className={`flex w-full gap-2.5 rounded border px-3 py-2 text-left ${
-                  doc.id === active.id ? "border-navy-700 bg-canvas" : "border-line hover:bg-canvas"
+                  doc.id === active.id ? "border-accent bg-raised" : "border-line hover:bg-raised/70"
                 }`}
               >
                 <FileText size={16} className="mt-0.5 shrink-0 text-ink-3" aria-hidden />
                 <span className="min-w-0">
-                  <span className="block text-[13px] font-medium leading-snug text-ink">{doc.title}</span>
-                  <span className="mt-0.5 block font-mono text-[11px] text-ink-3">
+                  <span className="block text-xs font-medium leading-snug text-ink">{doc.title}</span>
+                  <span className="mt-0.5 block font-mono text-2xs text-ink-3">
                     {KIND_LABEL[doc.kind]} · {doc.documentNumber} · Rev {doc.revision}
                   </span>
                 </span>
@@ -106,8 +106,8 @@ export function DocumentPanel({
                     onClick={() => setActiveItem(p.itemNumber === activeItem ? null : p.itemNumber)}
                     className={`grid size-7 place-items-center rounded-full border font-mono text-xs font-semibold ${
                       p.itemNumber === activeItem
-                        ? "border-navy-900 bg-navy-900 text-white"
-                        : "border-navy-700 bg-panel text-navy-700 hover:bg-canvas"
+                        ? "border-accent bg-accent-strong text-white"
+                        : "border-accent bg-panel text-accent hover:bg-raised/70"
                     }`}
                     aria-label={`Item ${p.itemNumber}: ${p.description}`}
                   >
@@ -121,7 +121,7 @@ export function DocumentPanel({
           {parts && parts.length > 0 && (
             <table className="w-full border-t border-line text-sm">
               <thead>
-                <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-ink-3">
+                <tr className="border-b border-line text-left text-2xs uppercase tracking-wide text-ink-3">
                   <th className="px-3 py-2 font-medium">Item</th>
                   <th className="px-3 py-2 font-medium">Demo part no.</th>
                   <th className="px-3 py-2 font-medium">Description</th>
@@ -135,7 +135,7 @@ export function DocumentPanel({
                     key={p.id}
                     onClick={() => setActiveItem(p.itemNumber)}
                     className={`cursor-pointer border-b border-line last:border-0 ${
-                      p.itemNumber === activeItem ? "bg-info-soft" : "hover:bg-canvas"
+                      p.itemNumber === activeItem ? "bg-info-soft" : "hover:bg-raised/70"
                     }`}
                   >
                     <td className="px-3 py-1.5 font-mono text-ink-2">{p.itemNumber}</td>
@@ -144,7 +144,7 @@ export function DocumentPanel({
                     </td>
                     <td className="px-3 py-1.5 text-ink-2">{p.description}</td>
                     <td className="px-3 py-1.5 font-mono text-xs text-ink-2">
-                      {p.sourceReference ? `${p.sourceReference.document} · Item ${p.sourceReference.item}` : (p.note ?? "—")}
+                      {p.sourceReference ? `${p.sourceReference.document} · Item ${p.sourceReference.item}` : (p.note ?? "–")}
                     </td>
                     <td className="px-3 py-1.5 text-right">
                       {p.linkedEntityId && (
@@ -154,7 +154,7 @@ export function DocumentPanel({
                             e.stopPropagation();
                             onSelect(p.linkedEntityId!);
                           }}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-navy-700 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
                         >
                           Open <ArrowRight size={12} aria-hidden />
                         </button>

@@ -40,13 +40,13 @@ export function PISheetNavigator({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center rounded border border-line bg-panel">
+      <div className="flex h-9 items-center overflow-hidden rounded-lg border border-line-strong bg-raised">
         <button
           type="button"
           aria-label="Previous sheet"
           disabled={index <= 0}
           onClick={() => onSheet(sheets[index - 1].id)}
-          className="grid size-7 place-items-center text-ink-2 hover:text-ink disabled:opacity-35"
+          className="grid h-full w-8 place-items-center text-ink-2 transition-colors hover:bg-white/[0.06] hover:text-ink disabled:opacity-35"
         >
           <ChevronLeft size={15} aria-hidden />
         </button>
@@ -54,7 +54,7 @@ export function PISheetNavigator({
           aria-label="Drawing sheet"
           value={activeSheetId}
           onChange={(e) => onSheet(e.target.value)}
-          className="h-7 border-x border-line bg-transparent px-1.5 text-xs text-ink"
+          className="h-full border-x border-line-strong bg-raised px-2 text-xs font-medium text-ink"
         >
           {sheets.map((s, i) => (
             <option key={s.id} value={s.id}>
@@ -67,14 +67,14 @@ export function PISheetNavigator({
           aria-label="Next sheet"
           disabled={index >= sheets.length - 1}
           onClick={() => onSheet(sheets[index + 1].id)}
-          className="grid size-7 place-items-center text-ink-2 hover:text-ink disabled:opacity-35"
+          className="grid h-full w-8 place-items-center text-ink-2 transition-colors hover:bg-white/[0.06] hover:text-ink disabled:opacity-35"
         >
           <ChevronRight size={15} aria-hidden />
         </button>
       </div>
 
       <div className="relative">
-        <Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
         <input
           type="search"
           value={query}
@@ -88,10 +88,10 @@ export function PISheetNavigator({
           }}
           placeholder="Item, part number or name"
           aria-label="Search PI items"
-          className="h-7 w-56 rounded border border-line bg-panel pl-7 pr-2 text-xs text-ink placeholder:text-ink-3"
+          className="h-9 w-44 rounded-lg @2xl:w-60 border border-line-strong bg-raised pl-9 pr-2 text-xs text-ink outline-none transition-shadow placeholder:text-ink-3 focus:border-accent focus:shadow-glow"
         />
         {q && (
-          <ul className="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded border border-line bg-panel text-xs shadow-md">
+          <ul className="absolute right-0 z-20 mt-1.5 w-80 animate-fade overflow-hidden rounded-lg border border-line-strong bg-raised text-xs shadow-raised">
             {results.length === 0 && <li className="px-3 py-2 text-ink-3">No matching PI items.</li>}
             {results.map((r) => (
               <li key={r.item}>
@@ -101,7 +101,7 @@ export function PISheetNavigator({
                     onSearchSelect(r.item);
                     setQuery("");
                   }}
-                  className="flex w-full items-baseline gap-2 px-3 py-1.5 text-left hover:bg-canvas"
+                  className="flex w-full items-baseline gap-2 px-3 py-2 text-left transition-colors hover:bg-accent-soft"
                 >
                   <span className="w-8 shrink-0 font-mono tabular text-ink-2">{r.item}</span>
                   <span className="min-w-0 flex-1 truncate text-ink">{r.name ?? "Unnamed item"}</span>

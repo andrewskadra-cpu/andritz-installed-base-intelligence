@@ -1,6 +1,6 @@
 /**
  * DEMO health engine. All telemetry threshold logic and the mapping of signals
- * to monitored regions live here — components must not compare readings
+ * to monitored regions live here: components must not compare readings
  * against limits or decide which signals belong to which equipment.
  *
  * Limits are illustrative demo values, not engineering or OEM limits. The engine

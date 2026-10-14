@@ -48,7 +48,7 @@ export function InstalledBaseSearch({ index }: { index: SearchEntry[] }) {
       >
         <Search
           size={20}
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3"
+          className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-ink-3"
           aria-hidden
         />
         <input
@@ -58,9 +58,9 @@ export function InstalledBaseSearch({ index }: { index: SearchEntry[] }) {
           placeholder="Customer, plant, serial number, equipment or part…"
           aria-label="Search installed base"
           autoFocus
-          className="h-14 w-full rounded-md border border-line-strong bg-panel pl-12 pr-28 text-base text-ink shadow-sm outline-none placeholder:text-ink-3 [&::-webkit-search-cancel-button]:hidden focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
+          className="h-16 w-full rounded-lg border border-line-strong bg-panel pl-14 pr-32 text-lg text-ink shadow-raised outline-none transition-shadow placeholder:text-ink-3 [&::-webkit-search-cancel-button]:hidden focus:border-accent focus:shadow-glow"
         />
-        <kbd className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-line bg-canvas px-2 py-1 font-mono text-[11px] text-ink-3 sm:flex">
+        <kbd className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-line bg-raised px-2 py-1 font-mono text-2xs text-ink-3 sm:flex">
           <CornerDownLeft size={12} aria-hidden /> open first
         </kbd>
       </form>
@@ -73,7 +73,7 @@ export function InstalledBaseSearch({ index }: { index: SearchEntry[] }) {
               key={s}
               type="button"
               onClick={() => setQuery(s)}
-              className="rounded border border-line bg-panel px-2 py-1 font-medium text-ink-2 hover:border-line-strong hover:text-ink"
+              className="rounded-full border border-line bg-panel px-3 py-1 font-medium text-ink-2 transition-colors hover:border-accent/50 hover:text-ink"
             >
               {s}
             </button>
@@ -82,7 +82,7 @@ export function InstalledBaseSearch({ index }: { index: SearchEntry[] }) {
       )}
 
       {hasQuery && (
-        <div className="mt-3 overflow-hidden rounded-md border border-line bg-panel">
+        <div className="mt-3 animate-fade overflow-hidden rounded-lg border border-line bg-panel shadow-raised">
           <div className="flex items-center justify-between border-b border-line px-4 py-2 text-xs text-ink-3">
             <span>
               {results.length} {results.length === 1 ? "match" : "matches"} in demo installed base
@@ -102,16 +102,16 @@ export function InstalledBaseSearch({ index }: { index: SearchEntry[] }) {
                   <li key={`${entry.kind}-${entry.id}`}>
                     <Link
                       href={entry.href}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-canvas focus:bg-canvas focus:outline-none"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-raised/70 focus:bg-raised/70 focus:outline-none"
                     >
-                      <span className="grid size-8 shrink-0 place-items-center rounded bg-canvas text-ink-2">
+                      <span className="grid size-8 shrink-0 place-items-center rounded bg-raised text-ink-2">
                         <Icon size={16} aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-ink">{entry.title}</span>
                         <span className="block truncate text-xs text-ink-3">{entry.subtitle}</span>
                       </span>
-                      <span className="hidden w-20 text-right text-[11px] font-medium uppercase tracking-wide text-ink-3 sm:block">
+                      <span className="hidden w-20 text-right text-2xs font-medium uppercase tracking-wide text-ink-3 sm:block">
                         {meta.label}
                       </span>
                       <span className="w-24 text-right">

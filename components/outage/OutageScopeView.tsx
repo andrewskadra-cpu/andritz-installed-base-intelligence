@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Info, Printer, RefreshCw } from "lucide-react";
+import { ArrowRight, ChevronRight, Info, Printer, RefreshCw } from "lucide-react";
 import { DemoBadge } from "@/components/ui/DemoBadge";
 import { EvidenceBadge } from "@/components/ui/EvidenceBadge";
 import { KeyValue } from "@/components/ui/KeyValue";
@@ -23,6 +23,9 @@ import type {
   SuggestedTiming,
 } from "@/types/outage";
 import type { TelemetryFrame } from "@/types/telemetry";
+import { ReferenceInquiryAction } from "@/components/parts-support/AssetPartsInquiry";
+import { contextFromRecords } from "@/lib/parts/part-context";
+import { ExportDraftPdfButton } from "./ExportDraftPdfButton";
 import { TraceChips } from "./TraceChips";
 
 export interface OutageScopeViewProps {
@@ -71,8 +74,8 @@ function Table({ head, children }: { head: string[]; children: ReactNode }) {
   return (
     <div className="overflow-x-auto rounded border border-line">
       <table className="w-full text-sm">
-        <thead className="bg-canvas">
-          <tr className="text-left text-[11px] uppercase tracking-wide text-ink-3">
+        <thead className="bg-raised">
+          <tr className="text-left text-2xs uppercase tracking-wide text-ink-3">
             {head.map((h) => (
               <th key={h} className="px-3 py-2 font-medium">
                 {h}
@@ -94,7 +97,7 @@ function ScopeHeader({ scope, live }: { scope: OutageScope; live: boolean }) {
     <header className="rounded-md border border-line bg-panel p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">Outage planning suggestions</div>
+          <div className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-3">Draft outage planning suggestions</div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">{scope.name}</h1>
         </div>
         <DemoBadge label="Synthetic demo data" />
@@ -111,11 +114,11 @@ function ScopeHeader({ scope, live }: { scope: OutageScope; live: boolean }) {
         <KeyValue label="Generated" value={utc(scope.generatedAt)} mono />
         <KeyValue
           label={live ? "Telemetry as of (live session)" : "Telemetry as of"}
-          value={scope.telemetryAsOf ? utc(scope.telemetryAsOf) : "—"}
+          value={scope.telemetryAsOf ? utc(scope.telemetryAsOf) : "–"}
           mono
         />
       </dl>
-      <p className="mt-4 flex gap-1.5 rounded bg-canvas px-3 py-2 text-xs leading-snug text-ink-2">
+      <p className="mt-4 flex gap-1.5 rounded bg-raised px-3 py-2 text-xs leading-snug text-ink-2">
         <Info size={13} className="mt-px shrink-0 text-ink-3" aria-hidden />
         <span>
           {PROTOTYPE_NOTICE} Final maintenance decisions require appropriate engineering and technician review.
@@ -144,7 +147,7 @@ function ExecutiveSummary({ scope }: { scope: OutageScope }) {
             key={t.label}
             className={`rounded-md border border-line bg-panel px-3 py-2.5 ${t.tone ? `border-l-4 ${STATUS_META[t.tone].accent}` : ""}`}
           >
-            <div className="text-[10px] font-medium uppercase leading-tight tracking-[0.06em] text-ink-3">{t.label}</div>
+            <div className="text-2xs font-medium uppercase leading-tight tracking-[0.06em] text-ink-3">{t.label}</div>
             <div className="mt-1 font-mono text-2xl font-semibold tabular text-ink">{t.value}</div>
           </div>
         ))}
@@ -192,7 +195,7 @@ function PriorityOverview({ scope }: { scope: OutageScope }) {
                   <StatusDot status={a.priorityArea.status} /> {a.priorityArea.name}
                 </span>
               ) : (
-                "—"
+                "–"
               )}
             </td>
             <td className="px-3 py-2 text-xs text-ink-2">
@@ -205,6 +208,101 @@ function PriorityOverview({ scope }: { scope: OutageScope }) {
         ))}
       </Table>
     </Section>
+  );
+}
+
+/**
+ * One-row chain for the asset's most specific suggestion: area, component,
+ * condition basis, inspection consideration, engineering reference, parts.
+ * Everything shown comes from the generated scope; nothing is added here.
+ */
+function PlanningTrace({ asset }: { asset: OutageScopeAsset }) {
+  const component = asset.components[0] ?? null;
+  const focusId = component?.id ?? asset.priorityArea?.id ?? null;
+  const issue = asset.issues.find((i) => i.entityId === focusId) ?? asset.issues[0];
+  const inspection = asset.inspections.find((i) => i.entityId === focusId) ?? asset.inspections[0];
+  if (!issue || !inspection) return null;
+  const parts = asset.parts.filter((p) => p.entityId === inspection.entityId);
+  const detected = issue.evidence.find((e) => e.level === "detected");
+
+  const steps: { label: string; body: ReactNode; sub?: ReactNode; href?: string }[] = [
+    {
+      label: "Affected area",
+      body: asset.priorityArea ? (
+        <span className="flex items-center gap-1.5">
+          <StatusDot status={asset.priorityArea.status} /> {asset.priorityArea.name}
+        </span>
+      ) : (
+        "–"
+      ),
+    },
+    {
+      label: "Component",
+      body: component ? component.name : inspection.entityName,
+      sub: component ? `in ${component.parentName}` : undefined,
+    },
+    {
+      label: "Condition basis",
+      body: issue.title,
+      sub: (
+        <>
+          {detected?.statement}
+          <span className="mt-0.5 block text-ink-3">
+            {issue.technicianConfirmed ? "Technician-confirmed finding on record." : "Not technician-confirmed."}
+          </span>
+        </>
+      ),
+    },
+    { label: "Inspection consideration", body: inspection.action, sub: TIMING[inspection.timing].label, href: "#inspections" },
+    {
+      label: "Engineering reference",
+      body: <span className="font-mono">{component?.reference ?? "Not assigned"}</span>,
+    },
+    {
+      label: "Parts to consider having available",
+      body:
+        parts.length === 0
+          ? "None suggested"
+          : parts.map((p) => (
+              <span key={p.description} className="block">
+                {p.description} <span className="font-mono text-ink-3">× {p.quantity}</span>
+              </span>
+            )),
+      sub: parts.length > 0 ? "For inspection / contingency only" : undefined,
+      href: "#parts",
+    },
+  ];
+
+  return (
+    <div className="border-b border-line bg-sunken/70 px-4 py-3">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink-2">Planning trace</h3>
+        <span className="text-2xs text-ink-3">How this suggestion connects to its source data · planning support only</span>
+      </div>
+      <ol className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {steps.map((s, i) => (
+          <li key={s.label} className="relative flex min-w-0 flex-col rounded border border-line bg-panel px-3 py-2">
+            <span className="text-2xs font-semibold uppercase tracking-[0.06em] text-ink-3">
+              {i + 1} · {s.label}
+            </span>
+            <span className="mt-1 text-xs font-medium leading-snug text-ink">{s.body}</span>
+            {s.sub && <span className="mt-1 text-2xs leading-snug text-ink-2">{s.sub}</span>}
+            {s.href && (
+              <a href={s.href} className="mt-auto pt-1.5 text-2xs font-medium text-info hover:underline print:hidden">
+                View in scope ↓
+              </a>
+            )}
+            {i < steps.length - 1 && (
+              <ChevronRight
+                size={14}
+                className="absolute -right-[11px] top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-panel text-ink-3 xl:block"
+                aria-hidden
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -236,12 +334,14 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
         )}
       </header>
 
+      <PlanningTrace asset={asset} />
+
       <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-3">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">Evidence / reasoning</h3>
+          <h3 className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">Evidence / reasoning</h3>
           {asset.issues.map((issue) => (
             <article key={issue.id} className="break-inside-avoid rounded border border-line">
-              <header className="flex items-start justify-between gap-2 border-b border-line bg-canvas/60 px-3 py-2">
+              <header className="flex items-start justify-between gap-2 border-b border-line bg-sunken/70 px-3 py-2">
                 <div>
                   <h4 className="text-sm font-semibold text-ink">{issue.title}</h4>
                   <div className="text-xs text-ink-3">{issue.entityName}</div>
@@ -252,9 +352,9 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
                 {issue.evidence.map((ev) => (
                   <li key={ev.level} className="flex gap-2.5 px-3 py-2">
                     <EvidenceBadge level={ev.level} unconfirmed={ev.level === "confirmed" && !issue.technicianConfirmed} />
-                    <div className="min-w-0 space-y-1 text-[13px] leading-snug">
+                    <div className="min-w-0 space-y-1 text-xs leading-snug">
                       <p className={ev.level === "inferred" ? "italic text-ink-2" : "text-ink"}>{ev.statement}</p>
-                      <p className="text-[11px] text-ink-3">{ev.source}</p>
+                      <p className="text-2xs text-ink-3">{ev.source}</p>
                       <TraceChips trace={ev.trace} />
                     </div>
                   </li>
@@ -266,7 +366,7 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
 
         <div className="space-y-5">
           <div>
-            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+            <h3 className="mb-2 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
               Condition indicators (live demo telemetry)
             </h3>
             <ul className="divide-y divide-line rounded border border-line">
@@ -286,7 +386,7 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
           </div>
 
           <div>
-            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+            <h3 className="mb-2 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
               Components suggested for review
             </h3>
             {asset.components.length === 0 ? (
@@ -295,14 +395,14 @@ function AssetDetail({ asset }: { asset: OutageScopeAsset }) {
               <ul className="space-y-1.5">
                 {asset.components.map((c) => (
                   <li key={c.id}>
-                    <Link href={c.href} className="block rounded border border-line px-3 py-2 hover:bg-canvas">
+                    <Link href={c.href} className="block rounded border border-line px-3 py-2 hover:bg-raised/70">
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-ink">
                           {c.name} <span className="font-normal text-ink-3">· in {c.parentName}</span>
                         </span>
                         <StatusBadge status={c.status} size="sm" />
                       </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-ink-3">
+                      <span className="mt-0.5 block font-mono text-2xs text-ink-3">
                         {[c.partNumber, c.reference].filter(Boolean).join(" · ") || "No part number assigned"}
                       </span>
                       <span className="mt-0.5 block text-xs text-ink-2">{c.reason}</span>
@@ -331,7 +431,7 @@ function Inspections({ scope }: { scope: OutageScope }) {
       ) : (
         <Table head={["#", "Equipment", "Consideration", "Suggested timing", "Traceability"]}>
           {rows.map((r, i) => (
-            <tr key={r.id}>
+            <tr key={`${r.id}-${i}`}>
               <td className="px-3 py-2 font-mono text-ink-3">{i + 1}</td>
               <td className="px-3 py-2">
                 <div className="text-xs text-ink-3">
@@ -346,7 +446,7 @@ function Inspections({ scope }: { scope: OutageScope }) {
               </td>
               <td className="px-3 py-2">
                 <span
-                  className={`whitespace-nowrap rounded border px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide ${TIMING[r.timing].className}`}
+                  className={`whitespace-nowrap rounded border px-1.5 py-px text-2xs font-semibold uppercase tracking-wide ${TIMING[r.timing].className}`}
                 >
                   {TIMING[r.timing].label}
                 </span>
@@ -380,7 +480,7 @@ function EngineeringInfo({ scope }: { scope: OutageScope }) {
             <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-ink-2">{r.reference}</td>
             <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-ink-2">{formatDate(r.date)}</td>
             <td className="px-3 py-2 text-right print:hidden">
-              <Link href={r.href} className="inline-flex items-center gap-1 text-xs font-medium text-navy-700 hover:underline">
+              <Link href={r.href} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
                 Open <ArrowRight size={12} aria-hidden />
               </Link>
             </td>
@@ -391,7 +491,7 @@ function EngineeringInfo({ scope }: { scope: OutageScope }) {
   );
 }
 
-function Parts({ scope }: { scope: OutageScope }) {
+function Parts({ scope, records }: { scope: OutageScope; records: Map<string, AssetRecords> }) {
   const rows = scope.priorityAssets.flatMap((a) => a.parts);
   return (
     <Section
@@ -402,14 +502,19 @@ function Parts({ scope }: { scope: OutageScope }) {
       {rows.length === 0 ? (
         <p className="text-sm text-ink-3">No contingency parts suggested.</p>
       ) : (
-        <Table head={["Demo part no.", "Description", "Reference", "Qty", "For", "Consideration", "Traceability"]}>
+        <>
+        <p className="mb-2 text-xs text-ink-3 print:hidden">
+          Optional: add individual lines to a Parts Inquiry for availability and compatibility confirmation. Nothing is added
+          automatically, and a line here is not a purchase requirement.
+        </p>
+        <Table head={["Demo part no.", "Description", "Reference", "Qty", "For", "Consideration", "Traceability", "Parts inquiry"]}>
           {rows.map((p) => (
             <tr key={`${p.assetId}-${p.partNumber ?? p.description}`}>
               <td className="whitespace-nowrap px-3 py-2 font-mono font-medium text-ink">
                 {p.partNumber ?? <span className="font-sans font-normal text-ink-3">Not assigned</span>}
               </td>
               <td className="px-3 py-2 text-ink-2">{p.description}</td>
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-ink-2">{p.reference ?? p.note ?? "—"}</td>
+              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-ink-2">{p.reference ?? p.note ?? "–"}</td>
               <td className="px-3 py-2 text-right font-mono tabular text-ink">{p.quantity}</td>
               <td className="px-3 py-2">
                 <div className="text-xs text-ink-3">{p.assetName}</div>
@@ -419,9 +524,21 @@ function Parts({ scope }: { scope: OutageScope }) {
               <td className="max-w-72 px-3 py-2">
                 <TraceChips trace={p.trace} />
               </td>
+              <td className="px-3 py-2 print:hidden">
+                {records.get(p.assetId) && (
+                  <ReferenceInquiryAction
+                    document={p.sourceReference?.document ?? null}
+                    item={p.sourceReference?.item ?? null}
+                    context={contextFromRecords(records.get(p.assetId)!, p.entityId)}
+                    source="outage-planning"
+                    searchHint={p.description}
+                  />
+                )}
+              </td>
             </tr>
           ))}
         </Table>
+        </>
       )}
     </Section>
   );
@@ -441,6 +558,14 @@ export function OutageScopeView(props: OutageScopeViewProps) {
     );
     return generateOutageScope({ customer, plant, units, outage, models, checklist, generatedAt: capture.capturedAt });
   }, [capture, assets, checklist, customer, plant, units, outage]);
+  const recordsById = useMemo(() => new Map(assets.map((a) => [a.records.asset.id, a.records])), [assets]);
+  const assetMeta = useMemo(
+    () =>
+      Object.fromEntries(
+        assets.map(({ records: r }) => [r.asset.id, { model: r.asset.model, plantName: r.plant.name, unitName: r.unit.name }]),
+      ),
+    [assets],
+  );
 
   const live = capture ? Object.values(capture.connection).some((c) => c !== "idle") : false;
 
@@ -454,17 +579,23 @@ export function OutageScopeView(props: OutageScopeViewProps) {
           <button
             type="button"
             onClick={() => captureTelemetry()}
-            className="inline-flex items-center gap-1.5 rounded border border-line-strong bg-panel px-3 py-1.5 text-sm font-medium text-ink-2 hover:text-ink"
+            className="btn-secondary px-3 py-1.5 text-sm"
           >
             <RefreshCw size={14} aria-hidden /> Refresh scope
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded bg-navy-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-navy-800"
+            className="btn-secondary px-3 py-1.5 text-sm"
           >
-            <Printer size={14} aria-hidden /> Print / export preview
+            <Printer size={14} aria-hidden /> Print preview
           </button>
+          <ExportDraftPdfButton
+            scope={scope}
+            assetMeta={assetMeta}
+            liveSession={live}
+            notices={[PLANNING_NOTICE, PROTOTYPE_NOTICE]}
+          />
         </div>
       </div>
 
@@ -480,7 +611,7 @@ export function OutageScopeView(props: OutageScopeViewProps) {
           ))}
           <Inspections scope={scope} />
           {scope.priorityAssets.length > 0 && <EngineeringInfo scope={scope} />}
-          <Parts scope={scope} />
+          <Parts scope={scope} records={recordsById} />
           {scope.otherAssets.length > 0 && (
             <Section title="Assets without active condition indicators">
               <ul className="space-y-1.5">

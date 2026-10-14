@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileWarning, Loader2 } from "lucide-react";
+import { FileWarning, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { entityIdForKey } from "@/lib/3d/ik700-model-map";
 import type { AssetModel, HierarchyNode } from "@/lib/asset-model";
+import { catalogIdFor } from "@/lib/parts/catalog";
+import { partsSupportHref } from "@/lib/parts/part-context";
 import { entityKeysForItem } from "@/lib/pi/pi-component-map";
 import { PI_FORMS, sheetOfItem } from "@/lib/pi/pi-registry";
 import type { PIReference } from "@/lib/pi/pi-types";
@@ -26,11 +28,17 @@ export function InteractivePIViewer({
   model,
   selectedEntityId,
   onSelectEntity,
+  canvasClassName = "h-[460px] @3xl:h-[540px]",
+  fill = false,
 }: {
   reference: PIReference;
   model: AssetModel;
   selectedEntityId: string;
   onSelectEntity: (id: string) => void;
+  /** Height of the drawing viewport when not expanded (document workspace sizes it to the screen). */
+  canvasClassName?: string;
+  /** Fill the parent's height: the drawing takes all space left by the header (side-by-side details scroll on their own). */
+  fill?: boolean;
 }) {
   const form = PI_FORMS[reference.form];
   const state = usePIManifest(reference.form);
@@ -39,6 +47,19 @@ export function InteractivePIViewer({
   // Sheet chosen manually, valid only for the item it was chosen for.
   const [sheetChoice, setSheetChoice] = useState<{ anchor: string; sheet: string } | null>(null);
   // Leaving an entity discards viewer-only choices, so returning to it starts from its reference.
+  // Expanded drawing: same component, so selection sync and viewer state carry over.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setExpanded(false);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [expanded]);
   const [lastEntityId, setLastEntityId] = useState(selectedEntityId);
   if (lastEntityId !== selectedEntityId) {
     setLastEntityId(selectedEntityId);
@@ -102,7 +123,7 @@ export function InteractivePIViewer({
 
   if (!form || state.status === "unavailable") {
     return (
-      <div className="grid min-h-[260px] place-items-center rounded border border-dashed border-line bg-canvas px-6 py-10 text-center">
+      <div className="grid min-h-[260px] place-items-center rounded border border-dashed border-line bg-raised px-6 py-10 text-center">
         <div>
           <FileWarning size={22} className="mx-auto text-ink-3" aria-hidden />
           <p className="mt-2 text-sm font-semibold text-ink">Engineering drawing available</p>
@@ -129,13 +150,24 @@ export function InteractivePIViewer({
   const itemSheetLabel = manifest.sheets.find((s) => s.id === itemSheetId)?.label ?? null;
 
   return (
-    <div className="@container">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-ink">
+    <div
+      className={
+        expanded
+          ? "fixed inset-0 z-50 flex animate-fade flex-col bg-canvas p-4 shadow-2xl lg:p-6"
+          : fill
+            ? "@container flex min-h-0 flex-1 flex-col"
+            : "@container"
+      }
+      role={expanded ? "dialog" : undefined}
+      aria-modal={expanded || undefined}
+      aria-label={expanded ? `${form.label} drawing` : undefined}
+    >
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="mr-auto min-w-0">
+          <p className="truncate text-base font-semibold text-ink" title={`${form.label} · ${manifest.title ?? form.title}`}>
             {form.label} <span className="font-normal text-ink-2">· {manifest.title ?? form.title}</span>
           </p>
-          <p className="text-[11px] text-ink-3">
+          <p className="text-xs text-ink-3">
             {form.equipmentModels.join(", ")} · {form.assembly}
           </p>
         </div>
@@ -146,10 +178,27 @@ export function InteractivePIViewer({
           items={manifest.items}
           onSearchSelect={chooseItem}
         />
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-pressed={expanded}
+          className="btn-secondary h-9 px-3 text-xs"
+        >
+          {expanded ? <Minimize2 size={13} aria-hidden /> : <Maximize2 size={13} aria-hidden />}
+          <span className={expanded ? "" : "sr-only @2xl:not-sr-only"}>{expanded ? "Exit expanded view" : "Expand drawing"}</span>
+        </button>
       </div>
 
-      <div className="grid gap-3 @4xl:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="h-[440px] @4xl:h-[520px]">
+      <div
+        className={
+          expanded
+            ? "grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] gap-4"
+            : fill
+              ? "grid min-h-0 flex-1 grid-rows-[minmax(320px,100%)_auto] gap-4 @3xl:grid-cols-[minmax(0,1fr)_300px] @3xl:grid-rows-1"
+              : "grid gap-4 @3xl:grid-cols-[minmax(0,1fr)_300px]"
+        }
+      >
+        <div className={expanded ? "min-h-0" : fill ? "min-h-0" : canvasClassName}>
           <PIDrawingCanvas
             sheet={activeSheet}
             imageUrl={`${ready!.baseUrl}${activeSheet.image}`}
@@ -158,7 +207,7 @@ export function InteractivePIViewer({
             onSelectItem={(item) => chooseItem(item, activeSheet.id)}
           />
         </div>
-        <div className="rounded border border-line p-3">
+        <div className={`rounded-lg border border-line bg-sunken/60 p-4 ${expanded ? "overflow-y-auto" : fill ? "@3xl:min-h-0 @3xl:overflow-y-auto" : ""}`}>
           <PIPartDetails
             formLabel={form.label}
             sheetLabel={
@@ -174,12 +223,21 @@ export function InteractivePIViewer({
             mappedNodes={selectedItem ? nodesForItem(selectedItem) : []}
             selectedEntityId={selectedEntityId}
             onSelectEntity={onSelectEntity}
+            catalogHref={
+              // Only named PI positions are catalog parts (same manifest, so the mapping is exact).
+              item?.name
+                ? partsSupportHref(`/parts/${catalogIdFor(reference.form, item.item)}`, {
+                    assetId: model.rootId,
+                    entityId: selectedEntityId === model.rootId ? null : selectedEntityId,
+                  })
+                : null
+            }
           />
           {selectedItem && itemSheetId && itemSheetId !== activeSheet.id && (
             <button
               type="button"
               onClick={() => setSheetChoice(null)}
-              className="mt-3 w-full rounded border border-line px-2 py-1 text-xs text-info hover:bg-canvas"
+              className="mt-3 w-full rounded-lg border border-accent/40 px-2 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent-soft"
             >
               Show item {selectedItem} on {itemSheetLabel}
             </button>

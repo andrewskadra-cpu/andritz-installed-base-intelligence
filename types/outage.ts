@@ -5,6 +5,7 @@
 
 import type {
   DocumentKind,
+  EngineeringReference,
   EvidenceLevel,
   HealthStatus,
   ServiceEventType,
@@ -93,6 +94,8 @@ export interface ContingencyPart {
   partNumber: string | null;
   /** Engineering reference for the line (e.g. "PI 4066 · Item 36"). */
   reference: string | null;
+  /** Structured form of `reference`, used to link the line to the parts catalog. */
+  sourceReference: EngineeringReference | null;
   /** Planning note such as "Reference to be confirmed". */
   note: string | null;
   description: string;

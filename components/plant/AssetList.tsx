@@ -59,7 +59,7 @@ export function AssetList({ assets }: { assets: AssetSummary[] }) {
 function Metric({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="hidden min-w-0 md:block">
-      <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">{label}</div>
+      <div className="text-2xs font-medium uppercase tracking-[0.06em] text-ink-3">{label}</div>
       <div className="truncate font-mono text-sm font-medium tabular text-ink">{value}</div>
     </div>
   );

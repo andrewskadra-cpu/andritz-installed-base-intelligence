@@ -43,6 +43,7 @@ export default async function PlantPage({ params }: PageProps<"/plants/[plantId]
     <>
       <TopBar
         breadcrumbs={[
+          { label: "Installed Base", href: "/installed-base" },
           { label: customer.name, href: `/customers/${customer.id}` },
           { label: plant.name },
         ]}
@@ -73,7 +74,7 @@ export default async function PlantPage({ params }: PageProps<"/plants/[plantId]
                       <Flame size={18} className="text-ink-2" aria-hidden />
                       <span className="font-semibold text-ink">{unit.name}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-xs font-medium text-navy-700 group-hover:underline">
+                    <span className="flex items-center gap-1 text-xs font-medium text-accent group-hover:underline">
                       {assets.length} assets <ArrowDown size={13} aria-hidden />
                     </span>
                   </div>
@@ -101,7 +102,7 @@ export default async function PlantPage({ params }: PageProps<"/plants/[plantId]
                 </div>
                 <BuildOutageScopeButton
                   href={`/plants/${plant.id}/outage-scope?unit=${unit.id}`}
-                  label={`Build Outage Scope · ${unit.name}`}
+                  label={`Build Draft Outage Scope · ${unit.name}`}
                   variant="secondary"
                 />
               </div>

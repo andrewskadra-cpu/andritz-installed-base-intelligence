@@ -1,8 +1,10 @@
 import { ArrowRight } from "lucide-react";
+import { ReferenceInquiryAction } from "@/components/parts-support/AssetPartsInquiry";
 import { DemoBadge } from "@/components/ui/DemoBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusDot } from "@/components/ui/StatusBadge";
 import type { AssetModel, HierarchyNode } from "@/lib/asset-model";
+import { contextFromRecords } from "@/lib/parts/part-context";
 import type { DocumentRecord, PartRecord } from "@/types/installed-base";
 import { InheritedNotice } from "./DocumentPanel";
 
@@ -24,6 +26,8 @@ export function PartsPanel({
 }) {
   if (parts.length === 0) return <EmptyState title={`No BOM lines for ${scopeName}`} />;
   const owner = inheritedFrom?.name ?? scopeName;
+  const ownerId = inheritedFrom?.id ?? parts[0].entityId;
+  const context = contextFromRecords(model.records, ownerId === model.rootId ? null : ownerId);
 
   return (
     <div>
@@ -42,13 +46,14 @@ export function PartsPanel({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-ink-3">
+            <tr className="border-b border-line text-left text-2xs uppercase tracking-wide text-ink-3">
               <th className="py-2 pr-4 font-medium">Item</th>
               <th className="py-2 pr-4 font-medium">Demo part no.</th>
               <th className="py-2 pr-4 font-medium">Description</th>
               <th className="py-2 pr-4 font-medium">Reference</th>
               <th className="py-2 pr-4 text-right font-medium">Qty</th>
               <th className="py-2 pr-4 font-medium">Status</th>
+              <th className="py-2 pr-4 font-medium">Parts inquiry</th>
               <th className="py-2" />
             </tr>
           </thead>
@@ -68,17 +73,28 @@ export function PartsPanel({
                         {p.sourceReference.document} · Item {p.sourceReference.item}
                       </span>
                     ) : (
-                      <span className="text-ink-3">{p.note ?? "—"}</span>
+                      <span className="text-ink-3">{p.note ?? "–"}</span>
                     )}
                   </td>
                   <td className="py-2 pr-4 text-right font-mono tabular text-ink">{p.quantity}</td>
                   <td className="py-2 pr-4">{linked && <StatusDot status={linked.status} />}</td>
+                  <td className="py-2 pr-4">
+                    {p.sourceReference && (
+                      <ReferenceInquiryAction
+                        document={p.sourceReference.document}
+                        item={p.sourceReference.item}
+                        context={context}
+                        source="asset-parts"
+                        searchHint={p.description}
+                      />
+                    )}
+                  </td>
                   <td className="py-2 text-right">
                     {linked && (
                       <button
                         type="button"
                         onClick={() => onSelect(linked.id)}
-                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-navy-700 hover:underline"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-accent hover:underline"
                       >
                         Open {linked.type} <ArrowRight size={12} aria-hidden />
                       </button>

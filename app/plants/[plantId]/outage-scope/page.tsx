@@ -6,7 +6,7 @@ import { getOutageScopeData, getPlant } from "@/lib/installed-base";
 
 export async function generateMetadata({ params }: PageProps<"/plants/[plantId]/outage-scope">): Promise<Metadata> {
   const plant = await getPlant((await params).plantId);
-  return { title: plant ? `Outage scope · ${plant.name}` : "Outage scope" };
+  return { title: plant ? `Draft outage scope · ${plant.name}` : "Draft outage scope" };
 }
 
 export default async function OutageScopePage({ params, searchParams }: PageProps<"/plants/[plantId]/outage-scope">) {
@@ -16,16 +16,16 @@ export default async function OutageScopePage({ params, searchParams }: PageProp
 
   const data = await getOutageScopeData(plantId, unitId);
   if (!data) notFound();
-  const { customer, plant, units } = data;
+  const { plant, units } = data;
 
   return (
     <>
       <TopBar
         breadcrumbs={[
-          { label: customer.name, href: `/customers/${customer.id}` },
+          { label: "Outage Planning", href: "/outage-planning" },
           { label: plant.name, href: `/plants/${plant.id}` },
           ...(unitId ? units.map((u) => ({ label: u.name, href: `/plants/${plant.id}#${u.id}` })) : []),
-          { label: "Outage scope" },
+          { label: "Draft outage scope" },
         ]}
       />
       <OutageScopeView {...data} />

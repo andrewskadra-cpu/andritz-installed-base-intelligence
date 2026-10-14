@@ -23,13 +23,13 @@ export function ModelDebugPanel({
   const assetId = model.rootId;
   return (
     // Compact by default so it never covers the model; details expand on demand.
-    <div className="pointer-events-auto absolute bottom-12 left-3 z-30 max-h-[60%] w-[300px] overflow-auto rounded border border-line bg-panel/95 p-2 font-mono text-[10px] leading-tight text-ink-2 shadow-md">
-      <div className="mb-1 font-sans text-[11px] font-semibold text-ink">3D model debug (development)</div>
+    <div className="pointer-events-auto absolute bottom-12 left-3 z-30 max-h-[60%] w-[300px] overflow-auto rounded border border-line bg-panel/95 p-2 font-mono text-2xs leading-tight text-ink-2 shadow-md">
+      <div className="mb-1 font-sans text-2xs font-semibold text-ink">3D model debug (development)</div>
       <div>selected: {selectedKey} · housing: {housingMode}</div>
-      <div>hovered object: {hovered ?? "—"}</div>
+      <div>hovered object: {hovered ?? "–"}</div>
       <div>model objects loaded: {objectNames.size}</div>
       <details className="mt-1">
-        <summary className="cursor-pointer font-sans text-[11px] text-ink-3">Entity → GLB mapping</summary>
+        <summary className="cursor-pointer font-sans text-2xs text-ink-3">Entity → GLB mapping</summary>
         <table className="mt-1.5 w-full">
           <thead>
             <tr className="text-left text-ink-3">
@@ -44,7 +44,7 @@ export function ModelDebugPanel({
               return (
                 <tr key={key} className={key === selectedKey ? "bg-info-soft" : ""}>
                   <td className="pr-1 align-top">{node ? key : `${key} (no entity)`}</td>
-                  <td className="pr-1 align-top">{node?.status ?? "—"}</td>
+                  <td className="pr-1 align-top">{node?.status ?? "–"}</td>
                   <td className="align-top">
                     {m.objects.length === 0
                       ? `UNMAPPED`
@@ -58,7 +58,7 @@ export function ModelDebugPanel({
         </table>
       </details>
       <details className="mt-1">
-        <summary className="cursor-pointer font-sans text-[11px] text-ink-3">Health surfaces</summary>
+        <summary className="cursor-pointer font-sans text-2xs text-ink-3">Health surfaces</summary>
         <div className="mt-1 text-ink-3">
           {[...health.surfaces].map(([o, s]) => `${o}=${s}`).join(", ")}
         </div>

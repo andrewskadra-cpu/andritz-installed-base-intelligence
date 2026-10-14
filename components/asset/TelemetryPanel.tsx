@@ -17,9 +17,12 @@ import type {
   TelemetrySignalKey,
 } from "@/types/telemetry";
 
-const SERIES_COLOR = "#1f3860";
-const AXIS_COLOR = "#6b778c";
-const GRID_COLOR = "#e6e9ef";
+// Chart colours resolve from the design tokens (SVG presentation attributes accept var()).
+const SERIES_COLOR = "var(--color-cyan)";
+const AXIS_COLOR = "var(--color-ink-3)";
+const BASELINE_COLOR = "var(--color-ink-2)";
+const GRID_COLOR = "var(--color-line)";
+const TICK = { fontSize: 12, fill: AXIS_COLOR, fontFamily: "var(--font-mono)" };
 
 /** Y-axis domain and ticks on a 1/2/5 step that always include the baseline. */
 function niceScale(values: number[], baseline: number) {
@@ -55,34 +58,34 @@ function ChannelChart({
   );
 
   return (
-    <figure className="rounded border border-line p-3">
+    <figure className="rounded-lg border border-line bg-sunken/60 p-4">
       <figcaption className="flex items-start justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-ink">{def.label}</div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-3">
+          <div className="mt-0.5 flex items-center gap-1.5 text-2xs text-ink-3">
             <svg width="16" height="2" aria-hidden>
-              <line x1="0" y1="1" x2="16" y2="1" stroke={AXIS_COLOR} strokeDasharray="3 2" />
+              <line x1="0" y1="1" x2="16" y2="1" stroke={BASELINE_COLOR} strokeDasharray="3 2" />
             </svg>
             Demo baseline {def.baseline} {def.unit}
           </div>
         </div>
         <div className="text-right">
-          <div className="font-mono text-lg font-semibold leading-none tabular text-ink">
+          <div className="font-mono text-2xl font-semibold leading-none tabular text-ink">
             {assessment.latest.toFixed(def.decimals)}
-            <span className="ml-1 text-xs font-normal text-ink-3">{def.unit}</span>
+            <span className="ml-1 text-sm font-normal text-ink-3">{def.unit}</span>
           </div>
-          <div className="mt-1 text-[10px] uppercase tracking-wide text-ink-3">Latest</div>
+          <div className="mt-1.5 text-2xs uppercase tracking-[0.08em] text-ink-3">Latest</div>
         </div>
       </figcaption>
 
-      <div className="mt-2 h-40">
+      <div className="mt-3 h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
-            <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+          <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -6 }}>
+            <CartesianGrid stroke={GRID_COLOR} strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="timestamp"
               tickFormatter={formatTime}
-              tick={{ fontSize: 10, fill: AXIS_COLOR }}
+              tick={TICK}
               tickLine={false}
               axisLine={{ stroke: GRID_COLOR }}
               minTickGap={40}
@@ -90,32 +93,41 @@ function ChannelChart({
             <YAxis
               domain={domain}
               ticks={ticks}
-              tick={{ fontSize: 10, fill: AXIS_COLOR }}
+              tick={TICK}
               tickLine={false}
               axisLine={false}
-              width={44}
+              width={50}
             />
-            <ReferenceLine y={def.baseline} stroke={AXIS_COLOR} strokeDasharray="4 4" />
+            <ReferenceLine y={def.baseline} stroke={BASELINE_COLOR} strokeOpacity={0.7} strokeDasharray="4 4" />
             <Tooltip
               formatter={(value) => [`${value} ${def.unit}`, def.label]}
               labelFormatter={(label) => formatTime(String(label))}
-              contentStyle={{ fontSize: 12, borderRadius: 4, borderColor: "#dde2ea" }}
+              contentStyle={{
+                fontSize: 13,
+                borderRadius: 8,
+                background: "var(--color-raised)",
+                borderColor: "var(--color-line-strong)",
+                color: "var(--color-ink)",
+                boxShadow: "var(--shadow-raised)",
+              }}
+              labelStyle={{ color: "var(--color-ink-3)", fontFamily: "var(--font-mono)", marginBottom: 2 }}
+              itemStyle={{ color: "var(--color-ink)", fontWeight: 600 }}
               cursor={{ stroke: AXIS_COLOR, strokeWidth: 1 }}
             />
             <Line
               type="monotone"
               dataKey="value"
               stroke={SERIES_COLOR}
-              strokeWidth={2}
+              strokeWidth={2.25}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }}
+              activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-panel)", fill: SERIES_COLOR }}
               isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 border-t border-line pt-2 text-xs">
+      <div className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-xs">
         {assessment.detection ? (
           <>
             <EvidenceBadge level="detected" />
@@ -138,7 +150,7 @@ function ChannelTable({ signals, frames }: { signals: TelemetrySignalKey[]; fram
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-ink-3">
+          <tr className="border-b border-line text-left text-2xs uppercase tracking-wide text-ink-3">
             <th className="py-2 pr-4 font-medium">Time (UTC)</th>
             <th className="py-2 pr-4 text-right font-medium">Cycle</th>
             {signals.map((k) => (
@@ -182,10 +194,10 @@ function HealthEngineStrip({
 }) {
   const reasons = signals.flatMap((k) => (assessment.signals[k].detection ? [assessment.signals[k].detection!] : []));
   return (
-    <div className="mb-4 grid gap-3 rounded border border-line bg-canvas/60 p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+    <div className="mb-4 grid gap-3 rounded-lg border border-line bg-sunken/70 p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+          <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
             Telemetry context · {scopeName}
           </span>
           <StatusBadge status={scopeStatus} size="sm" />
@@ -197,7 +209,7 @@ function HealthEngineStrip({
             {signals.length} signal{signals.length === 1 ? "" : "s"} within demo limits.
           </p>
         ) : (
-          <ul className="mt-1.5 space-y-0.5 text-sm text-ink-2">
+          <ul className="mt-2 space-y-1.5 text-sm text-ink-2">
             {reasons.map((r) => (
               <li key={r} className="flex gap-2">
                 <EvidenceBadge level="detected" />
@@ -209,13 +221,13 @@ function HealthEngineStrip({
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-1 self-start text-right sm:grid-cols-1">
         <div>
-          <dt className="text-[10px] uppercase tracking-wide text-ink-3">Cycle count</dt>
-          <dd className="font-mono text-lg font-semibold tabular text-ink">
+          <dt className="text-2xs uppercase tracking-wide text-ink-3">Cycle count</dt>
+          <dd className="font-mono text-xl font-semibold tabular text-ink">
             {formatNumber(assessment.latest.cycleCount)}
           </dd>
         </div>
         <div>
-          <dt className="text-[10px] uppercase tracking-wide text-ink-3">Last reading (UTC)</dt>
+          <dt className="text-2xs uppercase tracking-wide text-ink-3">Last reading (UTC)</dt>
           <dd className="font-mono text-sm tabular text-ink-2">
             {formatTime(assessment.latest.timestamp)} · {frames.length} samples
           </dd>
@@ -253,15 +265,15 @@ export function TelemetryPanel({
           <LiveDataBadge connection={connection} />
           <span>Synthetic readings from the telemetry simulator · not measured sensor data</span>
         </div>
-        <div className="flex rounded border border-line p-0.5 text-xs">
+        <div className="flex rounded-lg border border-line bg-sunken p-1 text-xs">
           {(["chart", "table"] as const).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
               aria-pressed={view === v}
-              className={`rounded-sm px-2.5 py-1 font-medium capitalize ${
-                view === v ? "bg-navy-900 text-white" : "text-ink-2 hover:text-ink"
+              className={`rounded-md px-3 py-1 font-medium capitalize transition-colors ${
+                view === v ? "bg-accent-strong text-white shadow-sm" : "text-ink-2 hover:bg-white/[0.05] hover:text-ink"
               }`}
             >
               {v}
@@ -284,7 +296,7 @@ export function TelemetryPanel({
           asset, to see live signals.
         </EmptyState>
       ) : view === "chart" ? (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           {signals.map((k) => (
             <ChannelChart key={k} signal={k} frames={frames} assessment={assessment.signals[k]} />
           ))}

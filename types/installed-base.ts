@@ -4,7 +4,7 @@
  * Stored records reference their parent by id so they map directly onto
  * relational tables when the demo dataset is replaced by Supabase. Health
  * status, last-service dates and running hours are NOT stored on equipment
- * records — they are derived (see lib/asset-model.ts) from service events and
+ * records: they are derived (see lib/asset-model.ts) from service events and
  * telemetry, so there is one source of truth for each fact.
  */
 

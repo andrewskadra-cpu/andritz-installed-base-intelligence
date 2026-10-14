@@ -8,7 +8,7 @@ export function HealthBar({ summary }: { summary: Record<HealthStatus, number> }
 
   return (
     <div>
-      <div className="flex h-2 gap-0.5 overflow-hidden rounded-sm bg-canvas" aria-hidden>
+      <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-sunken" aria-hidden>
         {present.map((s) => (
           <div
             key={s}
@@ -17,7 +17,7 @@ export function HealthBar({ summary }: { summary: Record<HealthStatus, number> }
           />
         ))}
       </div>
-      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2">
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
         {STATUS_ORDER.filter((s) => s !== "unknown" || summary.unknown > 0).map((s) => {
           const Icon = STATUS_META[s].icon;
           return (

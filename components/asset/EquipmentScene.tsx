@@ -8,7 +8,7 @@ import type { HealthStatus, ViewerZone } from "@/types/installed-base";
 
 /**
  * Placeholder long-retractable sootblower built from primitive geometry.
- * Proportions are illustrative only — this is not an engineering model.
+ * Proportions are illustrative only: this is not an engineering model.
  * Replace with a GLB per equipment model when real geometry is available.
  */
 
@@ -110,7 +110,7 @@ function ZoneGroup({
         style={{ pointerEvents: "none" }}
       >
         <div
-          className="whitespace-nowrap rounded border bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold shadow-sm"
+          className="whitespace-nowrap rounded border bg-white/95 px-1.5 py-0.5 text-2xs font-semibold shadow-sm"
           style={{
             borderColor: STATUS_META[zone.status].hex,
             color: "#0f1a2b",
@@ -202,7 +202,7 @@ export default function EquipmentScene({ zones, focus, context, onSelect, resetS
             </mesh>
           </group>
   
-          {/* Poppet valve — rear steam inlet */}
+          {/* Poppet valve: rear steam inlet */}
           <ZoneGroup zone={byZone("poppet_valve")} labelPosition={[-5, 1.0, 0]} {...common}>
             {(material) => (
               <group position={[-5, 0.4, 0]}>
@@ -223,7 +223,7 @@ export default function EquipmentScene({ zones, focus, context, onSelect, resetS
             )}
           </ZoneGroup>
   
-          {/* Feed tube — fixed, runs inside the lance tube */}
+          {/* Feed tube: fixed, runs inside the lance tube */}
           <ZoneGroup zone={byZone("feed_tube")} labelPosition={[-3.4, 0.75, 0]} {...common}>
             {(material) => (
               <mesh position={[-2.35, 0.4, 0]} rotation={[0, 0, HALF_PI]}>
@@ -234,7 +234,7 @@ export default function EquipmentScene({ zones, focus, context, onSelect, resetS
             )}
           </ZoneGroup>
   
-          {/* Lance tube — travels with the carriage into the boiler */}
+          {/* Lance tube: travels with the carriage into the boiler */}
           <ZoneGroup zone={byZone("lance_tube")} labelPosition={[3.2, 0.8, 0]} {...common}>
             {(material) => (
               <group>

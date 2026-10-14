@@ -187,7 +187,7 @@ export function buildAssetModel(records: AssetRecords, assessment: HealthAssessm
 }
 
 // ---------------------------------------------------------------------------
-// Tree helpers — generic over depth.
+// Tree helpers: generic over depth.
 // ---------------------------------------------------------------------------
 
 /** Nodes from the asset root down to `id`, inclusive. */

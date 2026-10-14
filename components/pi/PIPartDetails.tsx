@@ -1,6 +1,7 @@
 "use client";
 
-import { Link2, Link2Off } from "lucide-react";
+import Link from "next/link";
+import { Link2, Link2Off, PackageSearch } from "lucide-react";
 import { StatusDot } from "@/components/ui/StatusBadge";
 import type { HierarchyNode } from "@/lib/asset-model";
 import type { PIItem } from "@/lib/pi/pi-types";
@@ -8,7 +9,7 @@ import type { PIItem } from "@/lib/pi/pi-types";
 function Row({ label, value }: { label: string; value: string | number | undefined | null }) {
   const missing = value === undefined || value === null || value === "";
   return (
-    <div className="flex justify-between gap-3 border-b border-line py-1.5 last:border-b-0">
+    <div className="flex justify-between gap-3 border-b border-line py-2 last:border-b-0">
       <dt className="text-ink-3">{label}</dt>
       <dd className={`text-right ${missing ? "text-ink-3 italic" : "text-ink"}`}>{missing ? "Not available" : value}</dd>
     </div>
@@ -28,6 +29,7 @@ export function PIPartDetails({
   mappedNodes,
   selectedEntityId,
   onSelectEntity,
+  catalogHref = null,
 }: {
   formLabel: string;
   sheetLabel: string | null;
@@ -37,6 +39,8 @@ export function PIPartDetails({
   mappedNodes: HierarchyNode[];
   selectedEntityId: string;
   onSelectEntity: (id: string) => void;
+  /** Parts & Support detail for this item, when the item is indexed in the catalog. */
+  catalogHref?: string | null;
 }) {
   if (!itemNumber) {
     return (
@@ -49,10 +53,13 @@ export function PIPartDetails({
 
   return (
     <div className="text-xs">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
-        {formLabel} · Item {itemNumber}
-      </p>
-      <p className="mt-0.5 text-sm font-semibold text-ink">{item?.name ?? "Item name not available"}</p>
+      <p className="eyebrow">{formLabel}</p>
+      <div className="mt-1 flex items-start gap-2">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-info bg-info-soft font-mono text-xs font-semibold text-info shadow-glow">
+          {itemNumber}
+        </span>
+        <p className="pt-1 text-base font-semibold leading-snug text-ink">{item?.name ?? "Item name not available"}</p>
+      </div>
       {!item && (
         <p className="mt-1 text-ink-3">This item is not indexed in the local drawing manifest.</p>
       )}
@@ -60,10 +67,15 @@ export function PIPartDetails({
         <Row label="Shown on" value={sheetLabel} />
         <Row label="Part number" value={item?.partNumber} />
         <Row label="Quantity" value={item?.quantity} />
-        <Row label="Notes" value={item?.notes} />
       </dl>
+      {item?.notes && (
+        <div className="mt-3 rounded-lg bg-raised px-3 py-2.5">
+          <div className="text-2xs font-semibold uppercase tracking-[0.06em] text-ink-3">Notes from PI</div>
+          <p className="mt-0.5 leading-snug text-ink-2">{item.notes}</p>
+        </div>
+      )}
 
-      <div className="mt-3 rounded bg-canvas px-2.5 py-2">
+      <div className="mt-3 rounded-lg bg-raised px-3 py-2.5">
         {mappedNodes.length === 0 && (
           <p className="flex items-center gap-1.5 text-ink-2">
             <Link2Off size={13} className="shrink-0 text-ink-3" aria-hidden />
@@ -106,6 +118,14 @@ export function PIPartDetails({
           </>
         )}
       </div>
+      {catalogHref && (
+        <Link
+          href={catalogHref}
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 px-2 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent-soft"
+        >
+          <PackageSearch size={13} aria-hidden /> Part Details in Parts &amp; Support
+        </Link>
+      )}
     </div>
   );
 }

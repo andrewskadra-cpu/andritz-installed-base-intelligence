@@ -31,10 +31,10 @@ export function PICallout({
         <circle
           cx={callout.x}
           cy={callout.y}
-          r={r * 1.55}
+          r={r * 1.6}
           fill="none"
           stroke="#1f5fbf"
-          strokeWidth={2}
+          strokeWidth={2.5}
           vectorEffect="non-scaling-stroke"
           className="origin-center animate-[pi-pulse_1.4s_ease-in-out_infinite] motion-reduce:animate-none"
           style={{ transformBox: "fill-box" }}
@@ -47,7 +47,7 @@ export function PICallout({
         vectorEffect="non-scaling-stroke"
         className={
           selected
-            ? "fill-[#1f5fbf]/20 stroke-[#1f5fbf] [stroke-width:3]"
+            ? "fill-[#1f5fbf]/25 stroke-[#1f5fbf] [stroke-width:3.5]"
             : "fill-transparent stroke-transparent [stroke-width:1.5] group-hover:fill-[#1f5fbf]/10 group-hover:stroke-[#1f5fbf]"
         }
       />

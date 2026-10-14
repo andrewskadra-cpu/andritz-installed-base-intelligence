@@ -17,20 +17,20 @@ export function PlantHeader({
   assetCount: number;
 }) {
   return (
-    <div className="border-b border-line bg-panel px-4 py-5 lg:px-8">
+    <div className="page-band px-4 py-6 lg:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded bg-navy-900 text-white">
+          <span className="grid size-12 place-items-center rounded-md bg-accent-soft text-accent ring-1 ring-inset ring-accent/30">
             <Factory size={20} aria-hidden />
           </span>
           <div>
             <div className="text-xs font-medium text-ink-3">
               Plant · customer{" "}
-              <Link href={`/customers/${customer.id}`} className="text-navy-700 hover:underline">
+              <Link href={`/customers/${customer.id}`} className="text-accent hover:underline">
                 {customer.name}
               </Link>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink">{plant.name}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-ink">{plant.name}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">

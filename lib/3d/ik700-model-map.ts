@@ -1,6 +1,6 @@
 /**
  * Maps installed-base entities to named objects in the local IK-700
- * visualization model (public/models/ik700-v3.glb — gitignored, internal).
+ * visualization model (public/models/ik700-v3.glb: gitignored, internal).
  *
  * Keys are entity template keys (entity id without the "<assetId>-" prefix),
  * so every IK-700 asset shares one mapping. Only GLB object NAMES are used;

@@ -1,5 +1,5 @@
 /**
- * DEMO DATA — fictional records for the frontend prototype.
+ * DEMO DATA: fictional records for the frontend prototype.
  *
  * Nothing in this file describes a real customer, plant, failure statistic,
  * part number or equipment specification. Every value is illustrative and
@@ -106,7 +106,7 @@ export const assets: Asset[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Equipment hierarchy — each IK-700 shares the same placeholder structure.
+// Equipment hierarchy: each IK-700 shares the same placeholder structure.
 // Nodes link by parentId only; depth is not fixed.
 // ---------------------------------------------------------------------------
 
@@ -203,7 +203,7 @@ export const conditionNarratives: ConditionNarrative[] = assets.map((asset) => (
 }));
 
 // ---------------------------------------------------------------------------
-// Service history — the single source for last service / replacement dates
+// Service history: the single source for last service / replacement dates
 // and for running hours since service.
 // ---------------------------------------------------------------------------
 
@@ -269,7 +269,7 @@ export const serviceEvents: ServiceEvent[] = assets.flatMap((asset) => {
 });
 
 // ---------------------------------------------------------------------------
-// Documents — attached to exactly one node each.
+// Documents: attached to exactly one node each.
 // ---------------------------------------------------------------------------
 
 const documentTemplate: { key: string | null; kind: DocumentKind; title: string; code: string; revision: string; updated: string }[] = [
@@ -303,7 +303,7 @@ export const documents: DocumentRecord[] = assets.flatMap((asset) =>
 );
 
 // ---------------------------------------------------------------------------
-// Parts / BOM — each line belongs to one node's bill of materials.
+// Parts / BOM: each line belongs to one node's bill of materials.
 // ---------------------------------------------------------------------------
 
 interface BomLine {

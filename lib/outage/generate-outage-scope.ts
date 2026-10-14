@@ -319,6 +319,7 @@ function buildParts(model: AssetModel, nodes: HierarchyNode[]): ContingencyPart[
       seen.set(key, {
         partNumber: line.partNumber,
         reference: refLabel(line.sourceReference),
+        sourceReference: line.sourceReference,
         note: line.note,
         description: line.description,
         quantity: line.quantity,

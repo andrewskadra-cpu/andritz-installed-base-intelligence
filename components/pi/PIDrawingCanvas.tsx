@@ -112,7 +112,7 @@ export function PIDrawingCanvas({
   return (
     <div
       ref={viewport}
-      className="relative h-full min-h-[420px] cursor-grab touch-none select-none overflow-hidden rounded border active:cursor-grabbing border-line bg-[#fbfcfd]"
+      className="relative h-full min-h-[420px] cursor-grab touch-none select-none overflow-hidden rounded-lg border border-white/10 bg-paper shadow-raised ring-1 ring-black/40 active:cursor-grabbing"
       onPointerDown={(e) => {
         drag.current = { x: e.clientX, y: e.clientY, ox: t.x, oy: t.y, moved: false };
         (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
@@ -172,7 +172,7 @@ export function PIDrawingCanvas({
           </svg>
         </div>
       ) : (
-        <div className="absolute inset-0 grid place-items-center text-center text-sm text-ink-3">
+        <div className="absolute inset-0 grid place-items-center text-center text-sm text-paper-ink/70">
           <div>
             <ImageOff size={22} className="mx-auto" aria-hidden />
             <p className="mt-2">{sheet.label} image not available in this environment.</p>

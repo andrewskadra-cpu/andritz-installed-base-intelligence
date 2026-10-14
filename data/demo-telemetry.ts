@@ -1,5 +1,5 @@
 /**
- * DEMO DATA — starting conditions for the telemetry simulator per asset.
+ * DEMO DATA: starting conditions for the telemetry simulator per asset.
  * Fictional values chosen to match the demo installed-base records.
  */
 

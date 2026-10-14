@@ -55,10 +55,7 @@ export function HealthSummary({
   } else {
     fields = [
       { label: "Demo part number", value: node.partNumber ?? "Not assigned", mono: true },
-      ...(node.sourceReference
-        ? [{ label: "Engineering reference", value: `${node.sourceReference.document} · Item ${node.sourceReference.item}`, mono: true }]
-        : []),
-      { label: "Parent", value: parent?.name ?? "—" },
+      { label: "Parent", value: parent?.name ?? "–" },
       { label: "Last inspection", value: date(m.lastInspection), mono: true },
       { label: "Last replacement", value: date(m.lastReplacement), mono: true },
       {
@@ -67,16 +64,14 @@ export function HealthSummary({
         mono: true,
       },
       { label: "Hours since service", value: formatNumber(m.hoursSinceService), mono: true },
-      { label: "Issue count", value: conditionCount, mono: true },
     ];
-    note = { label: "Latest service note", text: m.events[0]?.description ?? "No service recorded for this component." };
   }
 
   return (
     <div className={`border-l-4 px-4 py-4 ${STATUS_META[node.status].accent}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+          <div className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
             {TYPE_LABEL[node.type]}
             {node.type === "asset" ? ` · ${asset.equipmentType}` : parent ? ` · in ${parent.name}` : ""}
           </div>
@@ -90,9 +85,9 @@ export function HealthSummary({
         ))}
       </dl>
       {note && (
-        <div className="mt-3 rounded bg-canvas px-3 py-2">
-          <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-3">{note.label}</div>
-          <p className="mt-0.5 text-[13px] leading-snug text-ink">{note.text}</p>
+        <div className="mt-3 rounded bg-raised px-3 py-2">
+          <div className="text-2xs font-medium uppercase tracking-[0.06em] text-ink-3">{note.label}</div>
+          <p className="mt-0.5 text-xs leading-snug text-ink">{note.text}</p>
         </div>
       )}
     </div>

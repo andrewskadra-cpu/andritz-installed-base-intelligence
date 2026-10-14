@@ -1,5 +1,5 @@
 /**
- * Telemetry provider entry point — the single place that decides where
+ * Telemetry provider entry point: the single place that decides where
  * telemetry comes from. Today every asset uses the simulator. When sensors are
  * connected, return an API/database-backed TelemetryProvider here instead and
  * read recent frames from that store; the UI and health engine stay unchanged.

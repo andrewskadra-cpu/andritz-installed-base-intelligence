@@ -11,10 +11,8 @@ export function KeyValue({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-3">{label}</dt>
-      <dd className={`mt-0.5 truncate text-sm font-medium text-ink ${mono ? "font-mono tabular" : ""}`}>
-        {value}
-      </dd>
+      <dt className="text-2xs font-medium uppercase tracking-[0.08em] text-ink-3">{label}</dt>
+      <dd className={`mt-1 truncate text-sm font-medium text-ink ${mono ? "font-mono tabular" : ""}`}>{value}</dd>
     </div>
   );
 }

@@ -23,6 +23,8 @@ import type {
   SearchEntry,
 } from "@/types/installed-base";
 import type { TelemetryFrame } from "@/types/telemetry";
+import type { EquipmentContext } from "@/types/parts-commerce";
+import { contextFromRecords } from "@/lib/parts/part-context";
 
 export async function getCustomers(): Promise<Customer[]> {
   return demo.customers;
@@ -213,7 +215,7 @@ export async function getSearchIndex(): Promise<SearchEntry[]> {
       kind: "unit",
       title: u.name,
       subtitle: `${u.unitType} · ${plantName(u.plantId)}`,
-      href: `/plants/${u.plantId}#${u.id}`,
+      href: `/installed-base?unit=${u.id}`,
       status: null,
       keywords: `${u.name} ${u.unitType} ${plantName(u.plantId)}`,
     });
@@ -248,4 +250,104 @@ export async function getSearchIndex(): Promise<SearchEntry[]> {
     }
   }
   return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Parts & Support
+// ---------------------------------------------------------------------------
+
+/** Component template key -> display name, for labelling PI-mapped components. */
+export async function getComponentNames(): Promise<Record<string, string>> {
+  const names: Record<string, string> = {};
+  for (const e of demo.assetEntities) {
+    const key = e.id.slice(e.assetId.length + 1);
+    names[key] ??= e.name;
+  }
+  return names;
+}
+
+/** Equipment context for a Parts & Support page; null when the asset is unknown. */
+export async function getPartsContext(
+  assetId: string | null,
+  entityId: string | null,
+): Promise<EquipmentContext | null> {
+  if (!assetId) return null;
+  const records = await getAssetRecords(assetId);
+  return records ? contextFromRecords(records, entityId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio views (Overview, Installed Base explorer, Equipment, Outage Planning)
+// ---------------------------------------------------------------------------
+
+export interface PortfolioAsset {
+  summary: AssetSummary;
+  customer: Customer;
+  plant: Plant;
+  unit: PlantUnit;
+  /** All active conditions on the asset, most severe first. */
+  conditions: (ActiveCondition & { nodeName: string })[];
+  /** Simulated telemetry history the health engine assessed (same frames as the asset page). */
+  recentTelemetry: TelemetryFrame[];
+}
+
+export interface PortfolioServiceEvent {
+  id: string;
+  date: string;
+  type: string;
+  description: string;
+  assetId: string;
+  assetName: string;
+  entityName: string;
+  workOrder: string;
+}
+
+/**
+ * Everything the portfolio screens show, derived exactly as the asset page
+ * derives it (records + recent telemetry -> health engine -> model). No
+ * aggregate is stored or invented.
+ */
+export async function getPortfolio() {
+  const data = (await Promise.all(demo.assets.map((a) => getAssetPageData(a.id)))).filter(
+    (d): d is NonNullable<typeof d> => d !== null,
+  );
+  const assets: PortfolioAsset[] = data.map(({ records, recentTelemetry }) => {
+    const model = buildAssetModel(records, assessHealth(recentTelemetry));
+    return {
+      summary: summarize(model),
+      customer: records.customer,
+      plant: records.plant,
+      unit: records.unit,
+      conditions: sortBySeverity(model.conditions).map((c) => ({ ...c, nodeName: model.nodes[c.entityId]?.name ?? "" })),
+      recentTelemetry,
+    };
+  });
+
+  const service: PortfolioServiceEvent[] = data
+    .flatMap(({ records }) =>
+      records.serviceEvents.map((e) => ({
+        id: e.id,
+        date: e.date,
+        type: e.type,
+        description: e.description,
+        assetId: records.asset.id,
+        assetName: records.asset.name,
+        entityName:
+          e.entityId === records.asset.id
+            ? records.asset.name
+            : (records.entities.find((x) => x.id === e.entityId)?.name ?? records.asset.name),
+        workOrder: e.workOrder,
+      })),
+    )
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  return {
+    customers: demo.customers,
+    plants: demo.plants,
+    units: demo.plantUnits,
+    assets,
+    service,
+    plannedOutages: demoOutage.plannedOutages,
+    health: summarizeHealth(assets.map((a) => a.summary.status)),
+  };
 }

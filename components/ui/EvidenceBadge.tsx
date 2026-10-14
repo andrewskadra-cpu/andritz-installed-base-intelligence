@@ -9,7 +9,7 @@ const EVIDENCE_META: Record<
     label: "Observed",
     icon: Eye,
     hint: "Raw measured value",
-    className: "border-line-strong bg-panel text-ink-2",
+    className: "border-line-strong bg-raised text-ink-2",
   },
   detected: {
     label: "Detected",
@@ -20,8 +20,8 @@ const EVIDENCE_META: Record<
   inferred: {
     label: "Inferred",
     icon: Lightbulb,
-    hint: "Hypothesis — not a diagnosis",
-    className: "border-dashed border-ink-3 bg-panel text-ink-2",
+    hint: "Hypothesis, not a diagnosis",
+    className: "border-dashed border-ink-3 bg-transparent text-ink-2",
   },
   confirmed: {
     label: "Confirmed",
@@ -39,11 +39,11 @@ export function EvidenceBadge({ level, unconfirmed = false }: { level: EvidenceL
   const meta = EVIDENCE_META[level];
   const isOpen = level === "confirmed" && unconfirmed;
   const Icon = isOpen ? ShieldQuestion : meta.icon;
-  const className = isOpen ? "border-line-strong bg-canvas text-ink-3" : meta.className;
+  const className = isOpen ? "border-line-strong bg-sunken text-ink-3" : meta.className;
   return (
     <span
       title={meta.hint}
-      className={`inline-flex w-[94px] shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] ${className}`}
+      className={`inline-flex h-6 w-[112px] shrink-0 items-center self-start gap-1.5 rounded-full border px-2 py-0.5 font-mono text-2xs font-semibold uppercase tracking-[0.06em] ${className}`}
     >
       <Icon size={11} strokeWidth={2.25} aria-hidden />
       {meta.label}

@@ -1,57 +1,325 @@
 @import "tailwindcss";
 
+/*
+ * IBIS design system.
+ *
+ * Every colour, radius, shadow and type size used by the UI comes from the
+ * tokens below. Components reference the semantic names (canvas, panel,
+ * raised, line, ink, accent, status): never raw hex values. The dark
+ * "midnight" theme is the default; print falls back to a light ink-on-paper
+ * set so the outage scope still prints cleanly.
+ *
+ * Health colours are reserved for health state (always paired with an icon
+ * and a label). Blue (accent/info) is reserved for selection and interactive
+ * emphasis. Unknown is neutral grey and must never read as healthy.
+ */
+
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 @theme {
-  /* Navigation */
-  --color-navy-950: #0a1426;
-  --color-navy-900: #0e1c34;
-  --color-navy-800: #152847;
-  --color-navy-700: #1f3860;
-  --color-navy-300: #9fb0cb;
+  /* ── Shell (navigation chrome) ─────────────────────────────── */
+  --color-navy-950: #070c16;
+  --color-navy-900: #0b1220;
+  --color-navy-800: #151d2c;
+  --color-navy-700: #202b3b;
+  --color-navy-300: #91a5bc;
 
-  /* Working surfaces */
-  --color-canvas: #f2f4f7;
-  --color-panel: #ffffff;
-  --color-line: #dde2ea;
-  --color-line-strong: #c5cdd9;
-  --color-ink: #0f1a2b;
-  --color-ink-2: #44526a;
-  --color-ink-3: #6b778c;
+  /* ── Surfaces ──────────────────────────────────────────────── */
+  --color-canvas: #0b1220; /* midnight: app background */
+  --color-panel: #151d2c; /* graphite: cards & panels */
+  --color-raised: #202b3b; /* elevated: insets, hovers, inputs */
+  --color-sunken: #0f1726; /* recessed wells inside panels */
+  --color-line: #263246;
+  --color-line-strong: #36455c;
 
-  /* Status — reserved for health state, always paired with icon + label */
-  --color-critical: #c0262d;
-  --color-critical-soft: #fbeaea;
-  --color-attention: #b26b00;
-  --color-attention-soft: #fdf3e1;
-  --color-healthy: #217a4b;
-  --color-healthy-soft: #e6f4ec;
-  --color-info: #1f5fbf;
-  --color-info-soft: #e8f0fb;
-  --color-unknown: #6b778c;
-  --color-unknown-soft: #eef0f4;
+  /* Light work surfaces (engineering drawings, 3D stage). */
+  --color-paper: #fbfcfd;
+  --color-paper-ink: #0f1a2b;
+
+  /* ── Foreground ────────────────────────────────────────────── */
+  --color-ink: #f3f7fc;
+  --color-ink-2: #b8c6d7;
+  --color-ink-3: #91a5bc;
+
+  /* ── Interactive emphasis (selection, links, primary actions) ─ */
+  --color-accent: #388bff; /* text / borders / selection */
+  --color-accent-strong: #2468d8; /* filled buttons (white text ≥ 5:1) */
+  --color-accent-hover: #2a70e2;
+  --color-accent-soft: #172a47;
+  --color-cyan: #30cbe8; /* data series, secondary highlights */
+  --color-violet: #b18cff; /* third data series (never a health colour) */
+
+  /* ── Status: health state only, always with icon + label ──── */
+  --color-critical: #f05a65;
+  --color-critical-soft: #35232f;
+  --color-attention: #f3b54a;
+  --color-attention-soft: #33302b;
+  --color-healthy: #2bc79a;
+  --color-healthy-soft: #15343a;
+  --color-info: #388bff;
+  --color-info-soft: #172a47;
+  --color-unknown: #91a5bc;
+  --color-unknown-soft: #253042;
+
+  /* ── Type scale (desktop-first; nothing below 12px) ────────── */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.05rem;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.2rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.65rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.85rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.4rem;
+
+  /* ── Radii ─────────────────────────────────────────────────── */
+  --radius-sm: 0.3125rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  /* ── Elevation ─────────────────────────────────────────────── */
+  --shadow-panel: inset 0 1px 0 rgb(255 255 255 / 0.035), 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -18px rgb(0 0 0 / 0.7);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 18px 48px -20px rgb(0 0 0 / 0.85);
+  --shadow-glow: 0 0 0 1px rgb(56 139 255 / 0.45), 0 8px 28px -10px rgb(56 139 255 / 0.55);
+
+  /* ── Motion ────────────────────────────────────────────────── */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-enter: ibis-enter 320ms var(--ease-out-soft) both;
+  --animate-fade: ibis-fade 220ms ease-out both;
+  --animate-shimmer: ibis-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes ibis-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ibis-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ibis-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+
+html {
+  color-scheme: dark;
+  font-size: 100%;
 }
 
 body {
-  background: var(--color-canvas);
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(1200px 520px at 70% -180px, rgb(56 139 255 / 0.07), transparent 70%),
+    radial-gradient(900px 420px at 0% 0%, rgb(48 203 232 / 0.035), transparent 70%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(56 139 255 / 0.35);
   color: var(--color-ink);
 }
 
-@media print {
-  body {
-    background: #fff;
-  }
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin, quiet scrollbars that match the surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  filter: invert(0.7);
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Reusable component utilities ─────────────────────────────── */
+
+/* Primary action: filled accent. */
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: var(--radius);
+  background-color: var(--color-accent-strong);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 6px 18px -10px rgb(36 104 216 / 0.9);
+  transition: background-color 150ms ease, transform 120ms ease, box-shadow 150ms ease;
+  &:hover { background-color: var(--color-accent-hover); }
+  &:active { transform: translateY(1px) scale(0.99); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+}
+
+/* Secondary action: outlined raised surface. */
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-line-strong);
+  background-color: var(--color-raised);
+  color: var(--color-ink);
+  font-weight: 500;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+  &:hover { border-color: rgb(56 139 255 / 0.55); background-color: #263346; }
+  &:active { transform: translateY(1px); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+}
+
+/* Small uppercase metadata label. */
+@utility eyebrow {
+  font-size: var(--text-2xs);
+  line-height: var(--text-2xs--line-height);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Loading placeholder. */
+@utility skeleton {
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--color-raised) 25%, #2a374b 50%, var(--color-raised) 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
 /* Interactive PI: selected callout ring */
 @keyframes pi-pulse {
   0%, 100% { opacity: 0.9; transform: scale(1); }
   50% { opacity: 0.25; transform: scale(1.18); }
+}
+
+/* ── Welcome / demo entry ─────────────────────────────────────── */
+
+@keyframes ibis-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 64px, 64px 0; }
+}
+
+@keyframes ibis-trail {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  12% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { stroke-dashoffset: -1; opacity: 0; }
+}
+
+@keyframes ibis-node {
+  0%, 100% { opacity: 0.35; r: 2.2; }
+  50% { opacity: 1; r: 3.4; }
+}
+
+@keyframes ibis-orbit {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Accessibility: honour reduced motion everywhere ─────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Print: ink on paper ─────────────────────────────────────── */
+
+@media print {
+  :root {
+    color-scheme: light;
+    --color-canvas: #ffffff;
+    --color-panel: #ffffff;
+    --color-raised: #f2f4f7;
+    --color-sunken: #f6f7f9;
+    --color-line: #dde2ea;
+    --color-line-strong: #c5cdd9;
+    --color-ink: #0f1a2b;
+    --color-ink-2: #44526a;
+    --color-ink-3: #5f6b80;
+    --color-accent: #1f5fbf;
+    --color-critical: #c0262d;
+    --color-critical-soft: #fbeaea;
+    --color-attention: #9a5c00;
+    --color-attention-soft: #fdf3e1;
+    --color-healthy: #217a4b;
+    --color-healthy-soft: #e6f4ec;
+    --color-info: #1f5fbf;
+    --color-info-soft: #e8f0fb;
+    --color-unknown: #6b778c;
+    --color-unknown-soft: #eef0f4;
+  }
+  body {
+    background: #fff;
+  }
+}
+
+/* Page header band: a quietly elevated strip above the workspace. */
+@utility page-band {
+  position: relative;
+  border-bottom: 1px solid var(--color-line);
+  background:
+    linear-gradient(180deg, rgb(32 43 59 / 0.55), rgb(21 29 44 / 0.35)),
+    radial-gradient(600px 160px at 85% 0%, rgb(56 139 255 / 0.08), transparent 70%);
+}
+
+/* Dark digital-twin stage behind the transparent 3D canvas. */
+@utility twin-stage {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgb(56 139 255 / 0.16), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 22% 85%, rgb(48 203 232 / 0.07), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, #16233a 0%, var(--color-canvas) 62%, var(--color-navy-950) 100%);
+}
+
+/* Slow environmental glow drifting behind the equipment (static under reduced motion). */
+@keyframes twin-glow {
+  0%, 100% { opacity: 0.55; transform: translate3d(-2%, 0, 0) scale(1); }
+  50% { opacity: 0.9; transform: translate3d(2%, -1.5%, 0) scale(1.06); }
+}
+
+@utility twin-glow {
+  pointer-events: none;
+  background: radial-gradient(ellipse 50% 40% at 50% 48%, rgb(56 139 255 / 0.14), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 62% 60%, rgb(48 203 232 / 0.08), transparent 70%);
+  animation: twin-glow 14s ease-in-out infinite;
+}
+
+/* Soft edge vignette over the stage (purely decorative, non-interactive). */
+@utility twin-vignette {
+  pointer-events: none;
+  background: radial-gradient(ellipse 85% 80% at 50% 45%, transparent 55%, rgb(4 8 15 / 0.55) 100%);
 }
